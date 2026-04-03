@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
-import { parseWebVtt, segmentsCharCount } from './parseVtt.js';
-import type { TranscriptSegment } from './types.js';
+import { parseWebVtt, segmentsCharCount } from '@/transcript/parseVtt';
+import type { TranscriptSegment } from '@/transcript/types';
 
 export type ScoredVtt = {
     path: string;

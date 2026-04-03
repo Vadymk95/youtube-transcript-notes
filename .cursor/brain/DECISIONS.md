@@ -22,9 +22,9 @@
 
 ## [2026-04] Single artifact bundle per video
 
-**Decision**: The canonical bundle under `artifacts/videos/<videoId>/` contains `transcript.md`, `summary-prompt.md`, `summary.ru.md`, and `manifest.json`.
+**Decision**: The canonical bundle under `artifacts/videos/<videoId>/` contains `transcript.md`, `summary-prompt.md`, `summary.<replyLanguage>.md`, and `manifest.json`.
 
-**Why**: The user-facing workflow requires a persisted Russian handoff summary, not just a prompt for another model.
+**Why**: The user-facing workflow requires a persisted handoff summary artifact, not just a prompt for another model. The filename now reflects the configured reply language code.
 
 **Trade-off**: The workflow now has one more required artifact and needs validation to ensure the stored summary matches the expected structure.
 
@@ -32,9 +32,9 @@
 
 ## [2026-04] Ralph Method for summary verification
 
-**Decision**: The final Russian summary must pass a structural validator before the workflow is considered complete.
+**Decision**: The final summary must pass a structural validator before the workflow is considered complete.
 
-**Why**: A raw transcript and prompt are not enough; the final deliverable must be structured, in Russian, and useful for the next AI agent without manual inspection.
+**Why**: A raw transcript and prompt are not enough; the final deliverable must be structured, aligned with the configured output language, and useful for the next AI agent without manual inspection.
 
 **Trade-off**: The agent must loop: write summary, validate, rewrite if needed.
 
@@ -46,13 +46,13 @@
 
 **Why**: The repo exists to produce concise Russian handoff notes from YouTube videos.
 
-**Trade-off**: Other languages require editing the prompt template or adding a new explicit mode later.
+**Trade-off**: Supporting another language still requires translating headings, ambiguity fallback, and script checks, but now that work is centralized in `src/summary/outputLanguage.ts` instead of being spread across prompt, validator, and artifact naming.
 
 ---
 
 ## [2026-04] Roll back partial agent artifacts on `prepare` failure
 
-**Decision**: If `prepareAgentWorkflow()` throws after writing bundle files in that invocation, delete `transcript.md`, `summary-prompt.md`, and `manifest.json` that were written in the same run. Do not delete `summary.ru.md` (user-owned).
+**Decision**: If `prepareAgentWorkflow()` throws after writing bundle files in that invocation, delete `transcript.md`, `summary-prompt.md`, and `manifest.json` that were written in the same run. Do not delete the final summary file (user-owned).
 
 **Why**: Avoids leaving a folder with a transcript but no manifest or prompt, which would confuse the agent contract.
 
@@ -77,3 +77,13 @@
 **Why**: YouTube auto-generated VTT uses both rolling/live-style prefix growth and sliding windows where the next cue drops the beginning of the phrase but keeps a long overlapping tail. Prefix-merge removes direct growth chains; overlap trimming produces a more readable transcript than aggressively merging whole windows into long paragraphs. Manual tracks rarely follow that pattern, and applying overlap heuristics outside auto-captions would risk incorrectly altering distinct utterances.
 
 **Trade-off**: Conservative overlap thresholds reduce duplicates, but edge cases can still leave some redundant lines or, if thresholds are loosened too far, trim legitimate repeated phrasing across sentence boundaries.
+
+---
+
+## [2026-04] Transcript quality harness gates caption cleanup changes
+
+**Decision**: Caption-cleanup iterations should be accepted only when `npm run eval:transcript-quality` passes on protected and improvement fixtures, in addition to normal repo verification.
+
+**Why**: Auto-caption cleanup is heuristic-heavy and easy to overfit to one video. A fixture-based harness gives a bounded autoresearch/evaluation loop with explicit keep-or-reject signals instead of intuition-only tuning.
+
+**Trade-off**: The harness itself can become stale or too narrow. Fixtures and thresholds need periodic review as new failure modes appear.

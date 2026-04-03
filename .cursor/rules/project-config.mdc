@@ -39,16 +39,18 @@ The agent workflow writes exactly these files:
 artifacts/videos/<videoId>/
   transcript.md
   summary-prompt.md
-  summary.ru.md
+ summary.<replyLanguage>.md
   manifest.json
 ```
 
 `manifest.json` is the machine-friendly entrypoint.
 `summary-prompt.md` is the source used to draft the final answer.
-`summary.ru.md` is the required persisted Russian handoff output.
+`summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 `transcript.md` is the raw fallback source.
 
-Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.ru.md`.
+The reply language, summary filename, headings, ambiguity fallback, and validator rules are driven by `src/summary/outputLanguage.ts`.
+
+Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.<replyLanguage>.md`.
 
 ## Prompt Contract
 

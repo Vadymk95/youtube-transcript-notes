@@ -1,6 +1,6 @@
 {
     "name": "youtube-transcript-notes",
-    "version": "1.2.0",
+    "version": "1.4.0",
     "private": true,
     "type": "module",
     "bin": {
@@ -9,9 +9,10 @@
     "scripts": {
         "agent:check-summary": "tsx src/cli/summaryValidatorCli.ts",
         "agent:prepare": "tsx src/cli/agentWorkflowCli.ts",
-        "build": "tsc -p tsconfig.build.json",
-        "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+        "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+        "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run eval:transcript-quality",
         "dev": "tsx src/cli/transcriptCli.ts",
+        "eval:transcript-quality": "tsx src/cli/transcriptQualityCli.ts",
         "start": "node dist/cli/transcriptCli.js",
         "typecheck": "tsc -p tsconfig.json",
         "lint": "eslint . --max-warnings 0",
@@ -38,6 +39,7 @@
         "husky": "^9.1.7",
         "lint-staged": "^16.4.0",
         "prettier": "^3.8.1",
+        "tsc-alias": "^1.8.16",
         "tsx": "^4.19.2",
         "typescript": "~5.9.3",
         "typescript-eslint": "^8.57.2",

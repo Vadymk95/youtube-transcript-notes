@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { validateRussianSummary } from '../summary/summaryContract.js';
+import { validateSummary } from '@/summary/summaryContract';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes summary validator
@@ -40,7 +40,7 @@ async function main(): Promise<void> {
 
     const absolutePath = path.resolve(process.cwd(), summaryFile);
     const content = await readFile(absolutePath, 'utf8');
-    const result = validateRussianSummary(content);
+    const result = validateSummary(content);
 
     console.log(
         JSON.stringify(

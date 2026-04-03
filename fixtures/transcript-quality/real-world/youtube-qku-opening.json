@@ -1,0 +1,79 @@
+{
+    "id": "youtube-qku-opening",
+    "description": "Real YouTube auto-caption opening excerpt should lose rolling/sliding duplicates.",
+    "language": "en",
+    "tags": ["improvement", "real-world", "youtube-auto", "tech-talk"],
+    "sourceKind": "real-world",
+    "segments": [
+        {
+            "startSec": 2,
+            "endSec": 4,
+            "text": "I freaking love Cloud Code skills. I think you do, too. But sometimes they're"
+        },
+        {
+            "startSec": 4,
+            "endSec": 6,
+            "text": "think you do, too. But sometimes they're a little bit unreliable. I would say"
+        },
+        {
+            "startSec": 6,
+            "endSec": 8,
+            "text": "a little bit unreliable. I would say about 70% of the time I run a skill, I"
+        },
+        {
+            "startSec": 8,
+            "endSec": 11,
+            "text": "about 70% of the time I run a skill, I get an intended output. About 30% of the"
+        },
+        {
+            "startSec": 11,
+            "endSec": 12,
+            "text": "get an intended output. About 30% of the time, it's a bag of rocks. What I wanted"
+        },
+        {
+            "startSec": 12,
+            "endSec": 14,
+            "text": "time, it's a bag of rocks. What I wanted to do in this video is I wanted to show"
+        },
+        {
+            "startSec": 14,
+            "endSec": 16,
+            "text": "to do in this video is I wanted to show you how to combine Claude Code skills"
+        },
+        {
+            "startSec": 16,
+            "endSec": 18,
+            "text": "you how to combine Claude Code skills with a new development in the AI space"
+        },
+        {
+            "startSec": 18,
+            "endSec": 19,
+            "text": "with a new development in the AI space called Auto Research to achieve"
+        },
+        {
+            "startSec": 19,
+            "endSec": 21,
+            "text": "called Auto Research to achieve significantly higher reliability,"
+        },
+        {
+            "startSec": 21,
+            "endSec": 23,
+            "text": "significantly higher reliability, accuracy, and allow your skills to quite"
+        },
+        {
+            "startSec": 23,
+            "endSec": 25,
+            "text": "accuracy, and allow your skills to quite literally improve themselves overnight."
+        }
+    ],
+    "requiredPhrases": [
+        "I freaking love Cloud Code skills.",
+        "combine Claude Code skills",
+        "Auto Research",
+        "significantly higher reliability, accuracy"
+    ],
+    "minSegmentReduction": 6,
+    "maxAdjacentOverlapPairs": 0,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 40
+}

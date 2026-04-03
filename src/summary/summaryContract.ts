@@ -1,27 +1,11 @@
-export const DEFAULT_REPLY_LANGUAGE = 'ru' as const;
+import { SUMMARY_OUTPUT_LANGUAGE } from '@/summary/outputLanguage';
 
-export const REQUIRED_SUMMARY_HEADINGS = [
-    '## О чем видео',
-    '## Краткий план',
-    '## Главные идеи',
-    '## Важно для следующего агента',
-    '## Пробелы и неоднозначности'
-] as const;
-
-const REQUIRED_HANDOFF_SUBHEADINGS = [
-    '### Факты, числа, имена',
-    '### Термины и определения',
-    '### Практические шаги',
-    '### Риски и оговорки'
-] as const;
-
-const SPECULATIVE_MARKERS = [
-    'вероятно',
-    'скорее всего',
-    'по-видимому',
-    'можно предположить',
-    'похоже'
-] as const;
+export const DEFAULT_REPLY_LANGUAGE = SUMMARY_OUTPUT_LANGUAGE.code;
+export const REQUIRED_SUMMARY_HEADINGS = SUMMARY_OUTPUT_LANGUAGE.requiredHeadings;
+const REQUIRED_HANDOFF_SUBHEADINGS = SUMMARY_OUTPUT_LANGUAGE.requiredHandoffSubheadings;
+const SPECULATIVE_MARKERS = SUMMARY_OUTPUT_LANGUAGE.speculativeMarkers;
+const [TOPIC_HEADING, OUTLINE_HEADING, IDEAS_HEADING, , GAPS_HEADING] = REQUIRED_SUMMARY_HEADINGS;
+const [, , , RISKS_SUBHEADING] = REQUIRED_HANDOFF_SUBHEADINGS;
 
 export type SummaryValidationResult = {
     valid: boolean;
@@ -41,11 +25,11 @@ function sectionBody(content: string, heading: string, allHeadings: readonly str
     return content.slice(afterHeading, nextHeadingIndex ?? content.length).trim();
 }
 
-function hasCyrillicText(content: string): boolean {
-    return /[А-Яа-яЁёІіЇїЄєҐґ]/.test(content);
+function hasExpectedLanguageText(content: string): boolean {
+    return SUMMARY_OUTPUT_LANGUAGE.contentScriptRegex.test(content);
 }
 
-export function validateRussianSummary(content: string): SummaryValidationResult {
+export function validateSummary(content: string): SummaryValidationResult {
     const errors: string[] = [];
     const trimmed = content.trim();
 
@@ -58,8 +42,8 @@ export function validateRussianSummary(content: string): SummaryValidationResult
         errors.push('Summary still contains the transcript placeholder');
     }
 
-    if (!hasCyrillicText(trimmed)) {
-        errors.push('Summary does not contain Cyrillic text');
+    if (!hasExpectedLanguageText(trimmed)) {
+        errors.push(`Summary does not contain ${SUMMARY_OUTPUT_LANGUAGE.contentScriptLabel} text`);
     }
 
     for (const heading of REQUIRED_SUMMARY_HEADINGS) {
@@ -74,37 +58,30 @@ export function validateRussianSummary(content: string): SummaryValidationResult
         }
     }
 
-    const outlineBody = sectionBody(trimmed, '## Краткий план', REQUIRED_SUMMARY_HEADINGS);
+    const outlineBody = sectionBody(trimmed, OUTLINE_HEADING, REQUIRED_SUMMARY_HEADINGS);
     if (!/\n?1\.\s+/m.test(outlineBody)) {
         errors.push('Short outline must contain a numbered list');
     }
 
-    const ideasBody = sectionBody(trimmed, '## Главные идеи', REQUIRED_SUMMARY_HEADINGS);
+    const ideasBody = sectionBody(trimmed, IDEAS_HEADING, REQUIRED_SUMMARY_HEADINGS);
     if (!/^\s*-\s+/m.test(ideasBody)) {
         errors.push('Main ideas must contain bullet points');
     }
 
-    const topicBody = sectionBody(trimmed, '## О чем видео', REQUIRED_SUMMARY_HEADINGS);
+    const topicBody = sectionBody(trimmed, TOPIC_HEADING, REQUIRED_SUMMARY_HEADINGS);
     if (topicBody.length < 20) {
         errors.push('The video topic section is too short');
     }
 
-    const gapsBody = sectionBody(
-        trimmed,
-        '## Пробелы и неоднозначности',
-        REQUIRED_SUMMARY_HEADINGS
-    ).toLowerCase();
-    const risksBody = sectionBody(trimmed, '### Риски и оговорки', [
+    const gapsBody = sectionBody(trimmed, GAPS_HEADING, REQUIRED_SUMMARY_HEADINGS).toLowerCase();
+    const risksBody = sectionBody(trimmed, RISKS_SUBHEADING, [
         ...REQUIRED_SUMMARY_HEADINGS,
         ...REQUIRED_HANDOFF_SUBHEADINGS
     ]).toLowerCase();
     const groundedBody = trimmed
+        .replace(sectionBody(trimmed, GAPS_HEADING, REQUIRED_SUMMARY_HEADINGS), '')
         .replace(
-            sectionBody(trimmed, '## Пробелы и неоднозначности', REQUIRED_SUMMARY_HEADINGS),
-            ''
-        )
-        .replace(
-            sectionBody(trimmed, '### Риски и оговорки', [
+            sectionBody(trimmed, RISKS_SUBHEADING, [
                 ...REQUIRED_SUMMARY_HEADINGS,
                 ...REQUIRED_HANDOFF_SUBHEADINGS
             ]),
@@ -128,3 +105,5 @@ export function validateRussianSummary(content: string): SummaryValidationResult
         errors
     };
 }
+
+export const validateRussianSummary = validateSummary;

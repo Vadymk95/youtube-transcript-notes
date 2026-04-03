@@ -14,11 +14,11 @@ const yt = vi.hoisted(() => ({
     fetchVideoInfo: vi.fn()
 }));
 
-vi.mock('../pipeline/pipeline.js', () => ({
+vi.mock('@/pipeline/pipeline', () => ({
     runPipeline: pipeline.runPipeline
 }));
 
-vi.mock('../pipeline/ytDlp.js', () => ({
+vi.mock('@/pipeline/ytDlp', () => ({
     fetchVideoInfo: yt.fetchVideoInfo
 }));
 
@@ -26,13 +26,17 @@ import {
     assembleSummaryPrompt,
     prepareAgentWorkflow,
     rollbackAgentArtifactFiles
-} from './agentWorkflow.js';
+} from '@/summary/agentWorkflow';
+import { summaryFileName } from '@/summary/outputLanguage';
 
 describe('assembleSummaryPrompt', () => {
     it('replaces transcript placeholder', () => {
-        const prompt = assembleSummaryPrompt('Before\n{{TRANSCRIPT}}\nAfter', 'hello\n');
+        const prompt = assembleSummaryPrompt(
+            'Before\n{{OUTPUT_LANGUAGE_NAME}}\n{{TRANSCRIPT}}\nAfter',
+            'hello\n'
+        );
 
-        expect(prompt).toBe('Before\nhello\nAfter');
+        expect(prompt).toBe('Before\nRussian\nhello\nAfter');
     });
 
     it('throws when the placeholder is missing', () => {
@@ -90,7 +94,7 @@ language: en
         expect(result.summaryPromptPath).toBe(
             path.join(artifactsDir, 'abc123', 'summary-prompt.md')
         );
-        expect(result.summaryPath).toBe(path.join(artifactsDir, 'abc123', 'summary.ru.md'));
+        expect(result.summaryPath).toBe(path.join(artifactsDir, 'abc123', summaryFileName()));
         expect(result.manifestPath).toBe(path.join(artifactsDir, 'abc123', 'manifest.json'));
         expect(result.transcriptSource).toBe('subtitle-auto');
         expect(result.transcriptLanguage).toBe('en');

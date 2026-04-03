@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateRussianSummary } from './summaryContract.js';
+import { validateSummary } from '@/summary/summaryContract';
 
-describe('validateRussianSummary', () => {
+describe('validateSummary', () => {
     it('accepts a well-formed Russian summary', () => {
         const summary = `## О чем видео
 Это короткое видео, где автор стоит перед слонами в зоопарке и описывает, что у них очень длинные хоботы.
@@ -34,14 +34,14 @@ describe('validateRussianSummary', () => {
 В тексте нет дополнительного контекста, поэтому многое остается неуточненным.
 `;
 
-        expect(validateRussianSummary(summary)).toEqual({
+        expect(validateSummary(summary)).toEqual({
             valid: true,
             errors: []
         });
     });
 
     it('reports missing structure and missing Cyrillic text', () => {
-        const result = validateRussianSummary('## Summary\n1. Hello world');
+        const result = validateSummary('## Summary\n1. Hello world');
 
         expect(result.valid).toBe(false);
         expect(result.errors).toContain('Summary does not contain Cyrillic text');
@@ -79,7 +79,7 @@ describe('validateRussianSummary', () => {
 Не указано в транскрипте, почему видео было снято.
 `;
 
-        const result = validateRussianSummary(summary);
+        const result = validateSummary(summary);
 
         expect(result.valid).toBe(false);
         expect(result.errors).toContain(

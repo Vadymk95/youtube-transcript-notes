@@ -1,4 +1,4 @@
-import type { TranscriptMeta, TranscriptSegment } from './types.js';
+import type { TranscriptMeta, TranscriptSegment } from '@/transcript/types';
 
 function formatTimestamp(sec: number): string {
     const s = Math.max(0, sec);

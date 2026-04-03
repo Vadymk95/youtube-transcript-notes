@@ -6,11 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const runCmdMock = vi.hoisted(() => vi.fn());
 
-vi.mock('../shared/runCmd.js', () => ({
+vi.mock('@/shared/runCmd', () => ({
     runCmd: runCmdMock
 }));
 
-import { downloadAutoSubs, downloadManualSubs } from './ytDlp.js';
+import { downloadAutoSubs, downloadManualSubs } from '@/pipeline/ytDlp';
 
 const defaultSubLangs = 'en,en-US,en-orig,ru,uk,-live_chat';
 

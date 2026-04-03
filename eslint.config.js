@@ -36,6 +36,21 @@ export default defineConfig([
             'import/extensions': ['.js', '.ts']
         },
         rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['@/**/*.js', './**/*.js', '../**/*.js'],
+                            message:
+                                'Use extensionless internal imports in TypeScript source files.'
+                        }
+                    ]
+                }
+            ],
+            // TypeScript + NodeNext + tsconfig path aliases are validated by `tsc`,
+            // but `import/no-unresolved` still reports false positives in editor diagnostics.
+            'import/no-unresolved': 'off',
             'import/order': [
                 'error',
                 {

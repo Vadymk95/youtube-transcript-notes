@@ -1,10 +1,35 @@
 # Changelog
 
+## 1.4.0 — 2026-04-03
+
+### Added
+
+- `src/transcript/suffixPrefixOverlap.ts` — shared suffix/prefix overlap used by `collapseRollingAutoCaptions` and transcript quality metrics.
+- `npm run eval:transcript-quality -- --json --compact` to omit `cleanedSegments` from JSON output.
+
+### Changed
+
+- `npm run ci` now runs `eval:transcript-quality` after build.
+- Agent workflow rollback logs `console.warn` when an artifact file cannot be removed during cleanup.
+
+## 1.3.0 — 2026-04-03
+
+### Added
+
+- Open-source friendly README quick start for Cursor / Claude Code and CLI usage.
+- Central `src/summary/outputLanguage.ts` config so output language, summary filename, validator headings, ambiguity fallback, and prompt placeholders can be changed in one place.
+
+### Changed
+
+- Agent workflow summary artifact is now language-coded as `summary.<replyLanguage>.md` (default remains `summary.ru.md`).
+- Prompt assembly and summary validation now derive language-specific behavior from the shared output-language config instead of hardcoded Russian-only wiring.
+
 ## 1.2.0 — 2026-04-03
 
 ### Added
 
 - Collapse rolling YouTube **auto** caption cues (prefix-extending chains and sliding-window overlap) before writing the transcript so `transcript.md` / `summary-prompt.md` are not filled with duplicate partial lines.
+- Add `npm run eval:transcript-quality`, a fixture-based transcript quality harness for autoresearch-style caption cleanup iterations with reject/accept gates.
 
 ### Changed
 

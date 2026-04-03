@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 
-import { prepareAgentWorkflow } from '../summary/agentWorkflow.js';
+import { prepareAgentWorkflow } from '@/summary/agentWorkflow';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes agent workflow

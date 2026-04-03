@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { collapseRollingAutoCaptions } from './collapseRollingCaptions.js';
+import { collapseRollingAutoCaptions } from '@/transcript/collapseRollingCaptions';
 
 describe('collapseRollingAutoCaptions', () => {
     it('merges a YouTube-style rolling prefix chain into one segment', () => {

@@ -1,0 +1,27 @@
+{
+    "id": "short-common-phrase-protected",
+    "description": "Does not merge unrelated cues that only share a short opening phrase.",
+    "language": "en",
+    "tags": ["protected", "synthetic", "false-merge"],
+    "sourceKind": "synthetic",
+    "segments": [
+        {
+            "startSec": 0,
+            "endSec": 2,
+            "text": "I think this feature is pretty useful overall"
+        },
+        {
+            "startSec": 1.8,
+            "endSec": 4,
+            "text": "I think we should probably test the fallback too"
+        }
+    ],
+    "requiredPhrases": [
+        "I think this feature is pretty useful overall",
+        "I think we should probably test the fallback too"
+    ],
+    "expectedSegmentCount": 2,
+    "maxAdjacentOverlapPairs": 0,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 9
+}

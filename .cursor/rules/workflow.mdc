@@ -18,7 +18,7 @@ priority: 105
 - Prefer surgical edits over broad rewrites.
 - If you replace a workflow or instruction, remove the obsolete version in the same task.
 - Add or update tests when behavior or contracts change.
-- For YouTube summary tasks, the job is not complete until `summary.ru.md` exists and passes `agent:check-summary`.
+- For YouTube summary tasks, the job is not complete until `summary.<replyLanguage>.md` exists and passes `agent:check-summary`.
 
 ## Verification
 

@@ -17,10 +17,10 @@ Canonical chat UX:
 2. Agent runs `npm run agent:prepare -- "<url>"`.
 3. Agent reads `artifacts/videos/<videoId>/manifest.json`.
 4. Agent reads `summary-prompt.md`.
-5. Agent writes `summary.ru.md`.
+5. Agent writes `summary.<replyLanguage>.md` (default: `summary.ru.md`).
 6. Agent runs `npm run agent:check-summary -- "<summary-file>"`.
 7. If validation fails, agent rewrites the summary and checks again.
-8. Agent returns the final answer in Russian.
+8. Agent returns the final answer in the configured reply language.
 
 Do not summarize from the title, URL, or assumptions when the transcript workflow is available.
 
@@ -42,13 +42,13 @@ The only canonical generated bundle is:
 artifacts/videos/<videoId>/
   transcript.md
   summary-prompt.md
-  summary.ru.md
+  summary.<replyLanguage>.md
   manifest.json
 ```
 
 - `manifest.json` is the machine-friendly entrypoint.
 - `summary-prompt.md` is the primary source for the final answer.
-- `summary.ru.md` is the required persisted Russian handoff output.
+- `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 - `transcript.md` is the raw fallback source.
 
 ## Commands
@@ -72,7 +72,7 @@ npm run ci
 - Keep one canonical local workflow. Do not introduce an external MCP or remote API as the new default path without explicit approval.
 - Remove obsolete docs, rules, and artifact contracts when they are superseded.
 - Sync `.cursor/brain/` when workflow contracts or project conventions change.
-- Use the Ralph Method for summaries: write `summary.ru.md` -> run the validator -> rewrite until it passes.
+- Use the Ralph Method for summaries: write `summary.<replyLanguage>.md` -> run the validator -> rewrite until it passes.
 
 ## Ignore / Noise Control
 

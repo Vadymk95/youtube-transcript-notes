@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { toMarkdown, toPlainText } from './formatTranscript.js';
-import type { TranscriptMeta, TranscriptSegment } from './types.js';
+import { toMarkdown, toPlainText } from '@/transcript/formatTranscript';
+import type { TranscriptMeta, TranscriptSegment } from '@/transcript/types';
 
 const sampleSegs: TranscriptSegment[] = [
     { startSec: 0, endSec: 5, text: 'Intro' },

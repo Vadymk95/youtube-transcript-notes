@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { languageFromVttPath, pickBestVtt } from './pickBestVtt.js';
+import { languageFromVttPath, pickBestVtt } from '@/transcript/pickBestVtt';
 
 describe('languageFromVttPath', () => {
     it('returns last dot segment before .vtt', () => {

@@ -2,7 +2,7 @@ import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { debuglog } from 'node:util';
 
-import { runCmd } from '../shared/runCmd.js';
+import { runCmd } from '@/shared/runCmd';
 
 const debugYtDlpAttempt = debuglog('yt-transcript:ytdlp');
 

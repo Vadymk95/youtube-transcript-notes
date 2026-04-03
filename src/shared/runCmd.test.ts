@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { runCmd } from './runCmd.js';
+import { runCmd } from '@/shared/runCmd';
 
 describe('runCmd', () => {
     it('runs a valid command and returns stdout', async () => {

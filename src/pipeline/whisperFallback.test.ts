@@ -6,11 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const runCmdMock = vi.hoisted(() => vi.fn());
 
-vi.mock('../shared/runCmd.js', () => ({
+vi.mock('@/shared/runCmd', () => ({
     runCmd: runCmdMock
 }));
 
-import { loadSegmentsFromVttFile, runWhisperToVtt } from './whisperFallback.js';
+import { loadSegmentsFromVttFile, runWhisperToVtt } from '@/pipeline/whisperFallback';
 
 const minimalVtt = `WEBVTT
 

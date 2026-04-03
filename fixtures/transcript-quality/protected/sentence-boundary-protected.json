@@ -1,0 +1,23 @@
+{
+    "id": "sentence-boundary-protected",
+    "description": "Keeps a repeated full sentence when the next cue starts a new sentence.",
+    "language": "en",
+    "tags": ["protected", "synthetic", "sentence-boundary"],
+    "sourceKind": "synthetic",
+    "segments": [
+        { "startSec": 0, "endSec": 2, "text": "This is a complete sentence." },
+        {
+            "startSec": 1.8,
+            "endSec": 4,
+            "text": "This is a complete sentence about our roadmap today"
+        }
+    ],
+    "requiredPhrases": [
+        "This is a complete sentence.",
+        "This is a complete sentence about our roadmap today"
+    ],
+    "expectedSegmentCount": 2,
+    "maxAdjacentOverlapPairs": 1,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 9
+}

@@ -2,12 +2,15 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_REPLY_LANGUAGE } from './summaryContract.js';
-
-import { runPipeline } from '../pipeline/pipeline.js';
-import { DEFAULT_WHISPER_CMD } from '../pipeline/whisperFallback.js';
-import { fetchVideoInfo } from '../pipeline/ytDlp.js';
-import type { TranscriptMeta } from '../transcript/types.js';
+import { runPipeline } from '@/pipeline/pipeline';
+import { DEFAULT_WHISPER_CMD } from '@/pipeline/whisperFallback';
+import { fetchVideoInfo } from '@/pipeline/ytDlp';
+import {
+    DEFAULT_REPLY_LANGUAGE,
+    promptTemplateVariables,
+    summaryFileName
+} from '@/summary/outputLanguage';
+import type { TranscriptMeta } from '@/transcript/types';
 
 export const DEFAULT_ARTIFACTS_DIR = path.join('artifacts', 'videos');
 
@@ -59,7 +62,12 @@ export function assembleSummaryPrompt(template: string, transcript: string): str
     if (!promptBlock.includes('{{TRANSCRIPT}}')) {
         throw new Error('Prompt template must contain {{TRANSCRIPT}} placeholder');
     }
-    return promptBlock.replaceAll('{{TRANSCRIPT}}', transcript.trimEnd());
+    const variables = promptTemplateVariables(transcript);
+    let rendered = promptBlock;
+    for (const [key, value] of Object.entries(variables)) {
+        rendered = rendered.replaceAll(`{{${key}}}`, value);
+    }
+    return rendered;
 }
 
 async function loadPromptTemplate(): Promise<string> {
@@ -68,8 +76,19 @@ async function loadPromptTemplate(): Promise<string> {
 
 /** Removes files written during a failed prepare run (newest first). */
 export async function rollbackAgentArtifactFiles(paths: readonly string[]): Promise<void> {
+    const failures: string[] = [];
     for (const p of [...paths].reverse()) {
-        await unlink(p).catch(() => {});
+        try {
+            await unlink(p);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            failures.push(`${p}: ${msg}`);
+        }
+    }
+    if (failures.length > 0) {
+        console.warn(
+            `[agent-workflow] rollback: failed to remove ${failures.length} file(s):\n${failures.join('\n')}`
+        );
     }
 }
 
@@ -79,7 +98,7 @@ function resolveArtifactPaths(artifactsDir: string, videoId: string): AgentArtif
         artifactDir,
         transcriptPath: path.join(artifactDir, 'transcript.md'),
         summaryPromptPath: path.join(artifactDir, 'summary-prompt.md'),
-        summaryPath: path.join(artifactDir, 'summary.ru.md'),
+        summaryPath: path.join(artifactDir, summaryFileName()),
         manifestPath: path.join(artifactDir, 'manifest.json')
     };
 }

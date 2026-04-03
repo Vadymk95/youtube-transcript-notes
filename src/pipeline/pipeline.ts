@@ -2,19 +2,18 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { loadSegmentsFromVttFile, runWhisperToVtt } from './whisperFallback.js';
+import { loadSegmentsFromVttFile, runWhisperToVtt } from '@/pipeline/whisperFallback';
 import {
     downloadAudio,
     downloadAutoSubs,
     downloadManualSubs,
     fetchVideoInfo,
     type VideoInfo
-} from './ytDlp.js';
-
-import { collapseRollingAutoCaptions } from '../transcript/collapseRollingCaptions.js';
-import { toMarkdown, toPlainText } from '../transcript/formatTranscript.js';
-import { languageFromVttPath, pickBestVtt } from '../transcript/pickBestVtt.js';
-import type { TranscriptMeta, TranscriptSegment } from '../transcript/types.js';
+} from '@/pipeline/ytDlp';
+import { collapseRollingAutoCaptions } from '@/transcript/collapseRollingCaptions';
+import { toMarkdown, toPlainText } from '@/transcript/formatTranscript';
+import { languageFromVttPath, pickBestVtt } from '@/transcript/pickBestVtt';
+import type { TranscriptMeta, TranscriptSegment } from '@/transcript/types';
 
 export type OutputFormat = 'md' | 'txt';
 

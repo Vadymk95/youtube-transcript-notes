@@ -16,19 +16,19 @@ const wf = vi.hoisted(() => ({
     loadSegmentsFromVttFile: vi.fn()
 }));
 
-vi.mock('./ytDlp.js', () => ({
+vi.mock('@/pipeline/ytDlp', () => ({
     downloadManualSubs: yt.downloadManualSubs,
     downloadAutoSubs: yt.downloadAutoSubs,
     downloadAudio: yt.downloadAudio,
     fetchVideoInfo: yt.fetchVideoInfo
 }));
 
-vi.mock('./whisperFallback.js', () => ({
+vi.mock('@/pipeline/whisperFallback', () => ({
     runWhisperToVtt: wf.runWhisperToVtt,
     loadSegmentsFromVttFile: wf.loadSegmentsFromVttFile
 }));
 
-import { runPipeline } from './pipeline.js';
+import { runPipeline } from '@/pipeline/pipeline';
 
 const longVtt = `WEBVTT
 

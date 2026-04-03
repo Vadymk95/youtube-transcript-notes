@@ -1,70 +1,19 @@
-import type { TranscriptSegment } from './types.js';
+import {
+    findSuffixPrefixOverlap,
+    MIN_OVERLAP_WORDS,
+    norm,
+    tokenize
+} from '@/transcript/suffixPrefixOverlap';
+import type { TranscriptSegment } from '@/transcript/types';
 
 const MAX_TIME_GAP_SEC = 1;
-const MAX_OVERLAP_WINDOW_WORDS = 18;
 const MAX_FRAGMENT_WORDS = 28;
 const MIN_FRAGMENT_JOIN_OVERLAP_WORDS = 2;
 const MIN_FRAGMENT_JOIN_OVERLAP_CHARS = 12;
-const MIN_OVERLAP_WORDS = 4;
 const MIN_OVERLAP_CHARS = 16;
 const MIN_OVERLAP_RATIO = 0.35;
 const MIN_DUPLICATE_SUFFIX_WORDS = 2;
 const MIN_DUPLICATE_SUFFIX_CHARS = 8;
-
-function norm(s: string): string {
-    return s.replace(/\s+/g, ' ').trim();
-}
-
-function normalizeWord(word: string): string {
-    const normalized = word.toLowerCase().replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, '');
-    return normalized || word.toLowerCase();
-}
-
-function tokenize(text: string): { raw: string[]; normalized: string[] } {
-    const raw = norm(text)
-        .split(' ')
-        .map((word) => word.trim())
-        .filter(Boolean);
-    return {
-        raw,
-        normalized: raw.map(normalizeWord)
-    };
-}
-
-function findSuffixPrefixOverlap(
-    currentText: string,
-    nextText: string
-): { wordCount: number; charCount: number; ratio: number } {
-    const current = tokenize(currentText);
-    const next = tokenize(nextText);
-    const limit = Math.min(
-        current.normalized.length,
-        next.normalized.length,
-        MAX_OVERLAP_WINDOW_WORDS
-    );
-
-    for (let size = limit; size >= 1; size -= 1) {
-        let matches = true;
-        for (let i = 0; i < size; i += 1) {
-            if (current.normalized[current.normalized.length - size + i] !== next.normalized[i]) {
-                matches = false;
-                break;
-            }
-        }
-        if (!matches) {
-            continue;
-        }
-
-        const overlapText = next.raw.slice(0, size).join(' ');
-        return {
-            wordCount: size,
-            charCount: overlapText.length,
-            ratio: size / Math.min(current.normalized.length, next.normalized.length)
-        };
-    }
-
-    return { wordCount: 0, charCount: 0, ratio: 0 };
-}
 
 function endsWithSentenceBoundary(text: string): boolean {
     return /[.!?]["')\]]*$/.test(norm(text));

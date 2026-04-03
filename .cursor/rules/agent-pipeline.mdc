@@ -22,17 +22,17 @@ When the user provides a YouTube URL and asks for a transcript, notes, summary, 
 1. Run `npm run agent:prepare -- "<url>"` from the repo root.
 2. Read `manifest.json`.
 3. Read `summary-prompt.md`.
-4. Write the final Russian handoff summary to `summary.ru.md`.
+4. Write the final handoff summary to `summary.<replyLanguage>.md` (default: `summary.ru.md`).
 5. Run `npm run agent:check-summary -- "<summary-file>"`.
 6. If validation fails, rewrite the summary and run the check again.
 7. Read `transcript.md` only if deeper validation is needed.
-8. Return the final answer in Russian.
+8. Return the final answer in the configured reply language.
 
 Hard rules:
 
 - Do not summarize from the video title, URL, or prior assumptions when the workflow is available.
 - Do not skip transcript generation just because a prompt template already exists.
-- Do not stop at `summary-prompt.md`; the workflow is incomplete until `summary.ru.md` exists and passes validation.
+- Do not stop at `summary-prompt.md`; the workflow is incomplete until `summary.<replyLanguage>.md` exists and passes validation.
 - Do not add inferred facts, historical context, motives, audience assumptions, or significance unless they are explicit in the transcript.
 - If something is missing from the transcript, say `Не указано в транскрипте` or put it in `## Пробелы и неоднозначности`.
 - If the workflow fails, explain which dependency is missing or which command failed.
@@ -41,7 +41,7 @@ Hard rules:
 
 When editing the repo itself:
 
-- Preserve one canonical path from URL to transcript to Russian answer.
+- Preserve one canonical path from URL to transcript to the configured final answer.
 - Prefer improving the current workflow over introducing a second orchestration layer.
 - Remove obsolete files or instructions when they are superseded by the new canonical flow.
 

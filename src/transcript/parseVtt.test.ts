@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseWebVtt, segmentsCharCount } from './parseVtt.js';
+import { parseWebVtt, segmentsCharCount } from '@/transcript/parseVtt';
 
 describe('parseWebVtt', () => {
     it('parses simple cues with WEBVTT header', () => {

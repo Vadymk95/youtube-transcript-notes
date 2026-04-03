@@ -1,4 +1,4 @@
-import type { TranscriptSegment } from './types.js';
+import type { TranscriptSegment } from '@/transcript/types';
 
 const TIME_LINE = /^(\d{1,2}:)?\d{2}:\d{2}\.\d{3}\s+-->\s+(\d{1,2}:)?\d{2}:\d{2}\.\d{3}/;
 

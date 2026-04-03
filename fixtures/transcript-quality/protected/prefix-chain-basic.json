@@ -1,0 +1,18 @@
+{
+    "id": "prefix-chain-basic",
+    "description": "Collapses a simple rolling prefix chain into one phrase.",
+    "language": "en",
+    "tags": ["protected", "synthetic", "prefix-chain"],
+    "sourceKind": "synthetic",
+    "segments": [
+        { "startSec": 0, "endSec": 1, "text": "I love" },
+        { "startSec": 0.5, "endSec": 2, "text": "I love cats" },
+        { "startSec": 1, "endSec": 3, "text": "I love cats today" }
+    ],
+    "requiredPhrases": ["I love cats today"],
+    "expectedSegmentCount": 1,
+    "minSegmentReduction": 2,
+    "maxAdjacentOverlapPairs": 0,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 6
+}
