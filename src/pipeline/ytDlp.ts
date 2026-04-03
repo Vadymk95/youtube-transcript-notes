@@ -8,6 +8,17 @@ const debugYtDlpAttempt = debuglog('yt-transcript:ytdlp');
 
 const YT_DLP = process.env.YT_DLP_BIN ?? 'yt-dlp';
 
+/**
+ * Comma-separated list for yt-dlp `--sub-langs`. Avoid `all`: it triggers hundreds of
+ * subtitle requests and often hits HTTP 429 from YouTube.
+ * Override with `YT_TRANSCRIPT_SUB_LANGS` (e.g. `all,-live_chat` if you accept the risk).
+ */
+const DEFAULT_SUB_LANGS = 'en,en-US,en-orig,ru,uk,-live_chat';
+
+function subLangsArg(): string {
+    return process.env.YT_TRANSCRIPT_SUB_LANGS?.trim() || DEFAULT_SUB_LANGS;
+}
+
 export type VideoInfo = {
     id: string;
     title: string;
@@ -69,7 +80,7 @@ export async function downloadManualSubs(url: string, workDir: string): Promise<
             '--sub-format',
             'vtt',
             '--sub-langs',
-            'all,-live_chat',
+            subLangsArg(),
             '-o',
             path.join(subDir, '%(id)s.%(language)s'),
             url
@@ -92,7 +103,7 @@ export async function downloadAutoSubs(url: string, workDir: string): Promise<Su
             '--sub-format',
             'vtt',
             '--sub-langs',
-            'all,-live_chat',
+            subLangsArg(),
             '-o',
             path.join(subDir, '%(id)s.%(language)s'),
             url

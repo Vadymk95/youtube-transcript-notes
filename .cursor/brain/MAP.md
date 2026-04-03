@@ -2,65 +2,26 @@
 
 ## Main Flows
 
-### Agent Summary Flow
+### Agent summary flow
 
-```text
-User message with YouTube URL
-  -> agent runs `npm run agent:prepare -- "<url>"`
-  -> `src/cli/agentWorkflowCli.ts`
-  -> `prepareAgentWorkflow()` in `src/summary/agentWorkflow.ts`
-  -> `runPipeline()` in `src/pipeline/pipeline.ts`
-  -> subtitles path or Whisper fallback
-  -> `transcript.md`
-  -> `summary-prompt.md`
-  -> `summary.ru.md`
-  -> `npm run agent:check-summary -- "<summary-file>"`
-  -> `manifest.json`
-  -> agent reads artifacts and answers in Russian
-```
+The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkflowCli`, which calls `prepareAgentWorkflow()` and `runPipeline()` to produce subtitles or Whisper fallback, then assembles artifacts. The chat step reads `manifest.json` and `summary-prompt.md`, writes `summary.ru.md`, runs `agent:check-summary` until validation passes, and answers in Russian. Implementation spine: `src/cli/agentWorkflowCli.ts` and `src/summary/agentWorkflow.ts`; validation: `src/cli/summaryValidatorCli.ts` with rules in `src/summary/summaryContract.ts`.
 
-### Transcript Generation Flow
+### Transcript generation flow
 
-```text
-`src/pipeline/pipeline.ts`
-  -> `downloadManualSubs()` from `src/pipeline/ytDlp.ts`
-  -> score `.vtt` files via `pickBestVtt()`
-  -> fallback to `downloadAutoSubs()`
-  -> fallback to `downloadAudio()` + `runWhisperToVtt()`
-  -> parse VTT via `parseWebVtt()`
-  -> format transcript via `toMarkdown()` or `toPlainText()`
-```
+`src/pipeline/pipeline.ts` orchestrates manual subtitles (`ytDlp`), ranked VTT selection, auto-caption fallback, then audio plus Whisper if needed. WebVTT is parsed and cleaned in `parseVtt.ts`, with scoring in `pickBestVtt.ts`. For YouTube auto tracks only, `collapseRollingAutoCaptions()` in `collapseRollingCaptions.ts` merges rolling prefix growth and trims sliding-window overlaps. Output is formatted in `formatTranscript.ts`. Shared process execution lives in `runCmd.ts`.
 
-## File Responsibilities
+## File responsibilities
 
-- `src/cli/` — CLI entrypoints for transcript generation, agent workflow, and summary validation
-- `src/summary/agentWorkflow.ts` — canonical artifact assembly for agent use; on failure after `transcript.md` is written, rolls back `transcript.md` / `summary-prompt.md` / `manifest.json` from that run (via `rollbackAgentArtifactFiles`)
-- `src/summary/summaryContract.ts` — required Russian summary format and validation rules
-- `src/pipeline/pipeline.ts` — orchestration for subtitles and Whisper fallback
-- `src/pipeline/ytDlp.ts` — metadata fetch, subtitles download, audio extraction
-- `src/pipeline/whisperFallback.ts` — Whisper shell execution and VTT loading
-- `src/transcript/parseVtt.ts` — WebVTT parsing and cleanup
-- `src/transcript/pickBestVtt.ts` — subtitle scoring and language inference
-- `src/transcript/formatTranscript.ts` — markdown/plain transcript formatting
-- `src/shared/runCmd.ts` — command execution helper with friendly missing-binary errors
-- `prompts/video-notes-prompt.md` — summary prompt template
+- `src/cli/` — transcript CLI, agent prepare, summary validator entrypoints
+- `src/summary/agentWorkflow.ts` — artifact paths, prompt assembly, rollback of partial prepare outputs (not `summary.ru.md`)
+- `src/summary/summaryContract.ts` — Russian summary shape and validation rules
+- `src/pipeline/pipeline.ts` — subtitle and Whisper orchestration
+- `src/pipeline/ytDlp.ts` — metadata and downloads; `--sub-langs` from `YT_TRANSCRIPT_SUB_LANGS` or a bounded default
+- `src/pipeline/whisperFallback.ts` — Whisper invocation and VTT loading
+- `src/transcript/` — VTT parsing, picking, auto-caption collapse, formatting; `types.ts` holds transcript metadata types used by manifest and pipeline
+- `src/shared/runCmd.ts` — command runner with missing-binary messaging
+- `prompts/video-notes-prompt.md` — summary template for assembly
 
-## Artifact Contract
+## Artifact contract
 
-The canonical output directory is:
-
-```text
-artifacts/videos/<videoId>/
-  transcript.md
-  summary-prompt.md
-  summary.ru.md
-  manifest.json
-```
-
-Agent contract:
-
-1. Read `manifest.json`
-2. Read `summary-prompt.md`
-3. Write `summary.ru.md`
-4. Run the validator until it passes
-5. Use `transcript.md` only as a raw fallback or for validation
+Each video folder under `artifacts/videos/<videoId>/` holds `transcript.md`, `summary-prompt.md`, `summary.ru.md`, and `manifest.json`. Agent order: read manifest and prompt, write `summary.ru.md`, validate, use `transcript.md` only as fallback or deep check.

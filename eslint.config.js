@@ -39,7 +39,10 @@ export default defineConfig([
             'import/order': [
                 'error',
                 {
-                    groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+                    // Keep `sibling` and `parent` as separate groups. If they share one group,
+                    // `alphabetize` orders paths so `../` sorts before `./`, which conflicts with
+                    // the usual "same-folder imports first" style and fights editor/format flows.
+                    groups: ['builtin', 'external', 'internal', 'sibling', 'parent', 'index'],
                     pathGroupsExcludedImportTypes: ['builtin'],
                     alphabetize: { order: 'asc', caseInsensitive: true },
                     'newlines-between': 'always'

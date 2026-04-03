@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 — 2026-04-03
+
+### Added
+
+- Collapse rolling YouTube **auto** caption cues (prefix-extending chains and sliding-window overlap) before writing the transcript so `transcript.md` / `summary-prompt.md` are not filled with duplicate partial lines.
+
+### Changed
+
+- Default yt-dlp `--sub-langs` for manual and auto captions is a bounded list (`en,en-US,en-orig,ru,uk,-live_chat`) instead of `all,-live_chat`, which greatly reduces HTTP 429 from YouTube. **Migration:** if you depend on other caption languages, set `YT_TRANSCRIPT_SUB_LANGS` (for the old behavior — not recommended — use `all,-live_chat`).
+
 ## 1.0.0
 
 ### Breaking

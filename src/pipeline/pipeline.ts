@@ -10,6 +10,8 @@ import {
     fetchVideoInfo,
     type VideoInfo
 } from './ytDlp.js';
+
+import { collapseRollingAutoCaptions } from '../transcript/collapseRollingCaptions.js';
 import { toMarkdown, toPlainText } from '../transcript/formatTranscript.js';
 import { languageFromVttPath, pickBestVtt } from '../transcript/pickBestVtt.js';
 import type { TranscriptMeta, TranscriptSegment } from '../transcript/types.js';
@@ -109,7 +111,10 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
         );
 
         if (fromSubs) {
-            segments = fromSubs.segments;
+            segments =
+                fromSubs.meta.source === 'subtitle-auto'
+                    ? collapseRollingAutoCaptions(fromSubs.segments)
+                    : fromSubs.segments;
             meta = { ...fromSubs.meta, videoId: info.id, title: info.title };
         } else {
             const whisperDir = path.join(workDir, 'whisper-out');

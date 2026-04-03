@@ -24,18 +24,7 @@ Primary user experience:
 
 ## Canonical Workflow
 
-The repo has one canonical agent flow:
-
-```text
-YouTube URL
-  -> npm run agent:prepare -- "<url>"
-  -> artifacts/videos/<videoId>/manifest.json
-  -> artifacts/videos/<videoId>/summary-prompt.md
-  -> artifacts/videos/<videoId>/summary.ru.md
-  -> artifacts/videos/<videoId>/transcript.md
-  -> npm run agent:check-summary -- "<summary-file>"
-  -> Russian answer in chat
-```
+The repo has one canonical agent flow: `agent:prepare` writes `transcript.md`, `summary-prompt.md`, and `manifest.json` under `artifacts/videos/<videoId>/`. The agent (chat step) writes `summary.ru.md`, then runs `agent:check-summary` until it passes, and replies in Russian using that summary.
 
 Do not introduce an alternative default path through an external MCP, remote API, or direct prompt-only summarization unless the user explicitly asks for that architecture.
 
@@ -52,11 +41,7 @@ The final summary must be validated before the workflow is considered complete.
 
 ## Important Commands
 
-```bash
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use
-npm run agent:prepare -- "<youtube-url>"
-npm run ci
-```
+Use the Node version from `.nvmrc` (load `nvm` in non-interactive shells if needed). Primary scripts: `agent:prepare`, `agent:check-summary`, and `ci` (see `package.json`).
 
 ## Constraints
 

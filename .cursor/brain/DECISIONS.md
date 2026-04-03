@@ -57,3 +57,23 @@
 **Why**: Avoids leaving a folder with a transcript but no manifest or prompt, which would confuse the agent contract.
 
 **Trade-off**: A failed run removes work that could have been inspected for debugging; users can re-run `agent:prepare` or use `YT_TRANSCRIPT_DEBUG` / pipeline flags to debug earlier stages.
+
+---
+
+## [2026-04] Bounded default for yt-dlp `--sub-langs`
+
+**Decision**: Manual and auto subtitle downloads use a short default language list (`en,en-US,en-orig,ru,uk,-live_chat`) instead of `all,-live_chat`.
+
+**Why**: Requesting all auto-caption languages triggers hundreds of HTTP calls and often returns HTTP 429 from YouTube, which made the pipeline fall through to Whisper unnecessarily.
+
+**Trade-off**: Videos whose only useful captions are outside the default list need `YT_TRANSCRIPT_SUB_LANGS` expanded (or `all` if the user accepts the risk).
+
+---
+
+## [2026-04] Collapse rolling auto captions only
+
+**Decision**: After parsing WebVTT from `subtitle-auto`, run `collapseRollingAutoCaptions()` to merge consecutive cues whose text extends the previous cue by prefix, then trim or drop repeated leading text from neighboring sliding-window cues by suffix-prefix overlap. Do not apply to `subtitle-manual` or Whisper.
+
+**Why**: YouTube auto-generated VTT uses both rolling/live-style prefix growth and sliding windows where the next cue drops the beginning of the phrase but keeps a long overlapping tail. Prefix-merge removes direct growth chains; overlap trimming produces a more readable transcript than aggressively merging whole windows into long paragraphs. Manual tracks rarely follow that pattern, and applying overlap heuristics outside auto-captions would risk incorrectly altering distinct utterances.
+
+**Trade-off**: Conservative overlap thresholds reduce duplicates, but edge cases can still leave some redundant lines or, if thresholds are loosened too far, trim legitimate repeated phrasing across sentence boundaries.

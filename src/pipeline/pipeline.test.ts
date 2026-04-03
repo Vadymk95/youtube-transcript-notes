@@ -132,6 +132,71 @@ describe('runPipeline', () => {
         expect(yt.downloadAudio).not.toHaveBeenCalled();
     });
 
+    it('collapses YouTube rolling auto captions into one segment per phrase chain', async () => {
+        const rollingBase = 'x'.repeat(80);
+        const rollingVtt = `WEBVTT
+
+00:00:00.000 --> 00:00:01.000
+${rollingBase}
+
+00:00:00.500 --> 00:00:02.000
+${rollingBase} bb
+
+00:00:01.000 --> 00:00:03.000
+${rollingBase} bb cc
+`;
+        yt.downloadManualSubs.mockResolvedValue({ kind: 'manual', files: [] });
+        yt.downloadAutoSubs.mockImplementation(async (_url: string, workDir: string) => {
+            const subDir = path.join(workDir, 'auto-subs');
+            await mkdir(subDir, { recursive: true });
+            const p = path.join(subDir, 'vid.en.vtt');
+            await writeFile(p, rollingVtt, 'utf8');
+            return { kind: 'auto' as const, files: [p] };
+        });
+
+        const result = await runPipeline(baseOptions(outFile));
+
+        expect(result.meta.source).toBe('subtitle-auto');
+        expect(result.segmentCount).toBe(1);
+
+        const body = await readFile(outFile, 'utf8');
+        expect(body).toContain(`${rollingBase} bb cc`);
+        const timestampBlocks = body.match(/\*\*\[\d{2}:\d{2}\]\*\*/g);
+        expect(timestampBlocks).toHaveLength(1);
+    });
+
+    it('deduplicates a sliding text window into a readable phrase', async () => {
+        const slidingVtt = `WEBVTT
+
+00:00:00.000 --> 00:00:02.000
+alpha beta gamma delta epsilon zeta
+
+00:00:01.500 --> 00:00:03.000
+gamma delta epsilon zeta eta theta iota
+
+00:00:02.500 --> 00:00:04.000
+epsilon zeta eta theta iota kappa lambda
+`;
+        yt.downloadManualSubs.mockResolvedValue({ kind: 'manual', files: [] });
+        yt.downloadAutoSubs.mockImplementation(async (_url: string, workDir: string) => {
+            const subDir = path.join(workDir, 'auto-subs');
+            await mkdir(subDir, { recursive: true });
+            const p = path.join(subDir, 'vid.en.vtt');
+            await writeFile(p, slidingVtt, 'utf8');
+            return { kind: 'auto' as const, files: [p] };
+        });
+
+        const result = await runPipeline(baseOptions(outFile));
+
+        expect(result.meta.source).toBe('subtitle-auto');
+        expect(result.segmentCount).toBe(1);
+
+        const body = await readFile(outFile, 'utf8');
+        expect(body).toContain('alpha beta gamma delta epsilon zeta eta theta iota kappa lambda');
+        const timestampBlocks = body.match(/\*\*\[\d{2}:\d{2}\]\*\*/g);
+        expect(timestampBlocks).toHaveLength(1);
+    });
+
     it('falls back to manual when below minChars but manual has text', async () => {
         yt.downloadManualSubs.mockImplementation(async (_url: string, workDir: string) => {
             const subDir = path.join(workDir, 'manual-subs');

@@ -71,6 +71,7 @@ Useful flags: `--format txt`, `--force-whisper`, `--min-chars <n>`, `--audio-for
 
 Environment:
 
+- `YT_TRANSCRIPT_SUB_LANGS` — comma-separated `--sub-langs` for yt-dlp manual/auto captions (default: `en,en-US,en-orig,ru,uk,-live_chat`). Avoid `all` unless you accept many requests and possible HTTP 429 from YouTube. Upgrading from **1.0.x**: if you relied on every language being fetched, set this explicitly (e.g. `all,-live_chat`).
 - `YT_TRANSCRIPT_WHISPER_CMD` — default Whisper shell template
 - `YT_TRANSCRIPT_DEBUG` — log yt-dlp subtitle attempt failures to stderr (prefixed with `[yt-transcript]`)
 - `NODE_DEBUG=yt-transcript:ytdlp` — same subtitle-attempt messages via Node `debuglog` (stderr)
