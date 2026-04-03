@@ -2,9 +2,6 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { toMarkdown, toPlainText } from './formatTranscript.js';
-import { languageFromVttPath, pickBestVtt } from './pickBestVtt.js';
-import type { TranscriptMeta, TranscriptSegment } from './types.js';
 import { loadSegmentsFromVttFile, runWhisperToVtt } from './whisperFallback.js';
 import {
     downloadAudio,
@@ -13,6 +10,9 @@ import {
     fetchVideoInfo,
     type VideoInfo
 } from './ytDlp.js';
+import { toMarkdown, toPlainText } from '../transcript/formatTranscript.js';
+import { languageFromVttPath, pickBestVtt } from '../transcript/pickBestVtt.js';
+import type { TranscriptMeta, TranscriptSegment } from '../transcript/types.js';
 
 export type OutputFormat = 'md' | 'txt';
 

@@ -1,0 +1,58 @@
+---
+description: Stack, commands, and artifact contract for youtube-transcript-notes
+globs: ['**/*']
+alwaysApply: true
+priority: 95
+---
+
+# Project Config: youtube-transcript-notes
+
+## Stack
+
+- Node 20 from `.nvmrc`
+- TypeScript 5.9 strict with `NodeNext`
+- Native ESM
+- Vitest 4
+- ESLint 9 flat config
+- External runtime tools: `yt-dlp`, `ffmpeg`, optional Whisper CLI
+
+## Canonical Commands
+
+Before `npm` commands in agent shells:
+
+```bash
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use
+```
+
+Primary workflow commands:
+
+```bash
+npm run agent:prepare -- "<youtube-url>"
+npm run ci
+```
+
+## Canonical Artifact Contract
+
+The agent workflow writes exactly these files:
+
+```text
+artifacts/videos/<videoId>/
+  transcript.md
+  summary-prompt.md
+  summary.ru.md
+  manifest.json
+```
+
+`manifest.json` is the machine-friendly entrypoint.
+`summary-prompt.md` is the source used to draft the final answer.
+`summary.ru.md` is the required persisted Russian handoff output.
+`transcript.md` is the raw fallback source.
+
+Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.ru.md`.
+
+## Prompt Contract
+
+- `prompts/video-notes-prompt.md` is the source of truth for final summary structure.
+- `src/summary/agentWorkflow.ts` must keep prompt assembly compatible with that template.
+- `src/summary/summaryContract.ts` must stay aligned with the exact output headings required by the prompt.
+- If the template placeholder, separator, or heading contract changes, update tests and validator rules together.

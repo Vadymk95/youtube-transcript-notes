@@ -3,9 +3,9 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { runPipeline } from './pipeline.js';
-import { DEFAULT_WHISPER_CMD } from './whisperFallback.js';
-import { fetchVideoInfo } from './ytDlp.js';
+import { runPipeline } from '../pipeline/pipeline.js';
+import { DEFAULT_WHISPER_CMD } from '../pipeline/whisperFallback.js';
+import { fetchVideoInfo } from '../pipeline/ytDlp.js';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes — YouTube URL → transcript file

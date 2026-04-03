@@ -1,7 +1,10 @@
 import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { debuglog } from 'node:util';
 
-import { runCmd } from './runCmd.js';
+import { runCmd } from '../shared/runCmd.js';
+
+const debugYtDlpAttempt = debuglog('yt-transcript:ytdlp');
 
 const YT_DLP = process.env.YT_DLP_BIN ?? 'yt-dlp';
 
@@ -47,8 +50,9 @@ async function tryRunYtDlp(args: string[], cwd: string): Promise<boolean> {
         return true;
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
+        debugYtDlpAttempt('subtitle download attempt failed: %s', msg);
         if (process.env.YT_TRANSCRIPT_DEBUG) {
-            console.error(msg);
+            console.error(`[yt-transcript] yt-dlp: ${msg}`);
         }
         return false;
     }

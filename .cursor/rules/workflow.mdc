@@ -1,0 +1,43 @@
+---
+description: Quality gates, approval rules, and cleanup policy for youtube-transcript-notes
+globs: ['**/*']
+alwaysApply: true
+priority: 105
+---
+
+# Workflow Standards: youtube-transcript-notes
+
+## Approval Law
+
+- Any change larger than a tiny fix requires a short plan before editing.
+- If the user already approved a plan, execute directly and stay inside that scope.
+
+## Core Standards
+
+- Follow the Ghost Principle: modify only what the task requires.
+- Prefer surgical edits over broad rewrites.
+- If you replace a workflow or instruction, remove the obsolete version in the same task.
+- Add or update tests when behavior or contracts change.
+- For YouTube summary tasks, the job is not complete until `summary.ru.md` exists and passes `agent:check-summary`.
+
+## Verification
+
+After substantive edits, run:
+
+```bash
+npm run ci
+```
+
+If the full command is too heavy for a tiny docs-only change, explain what was run instead.
+
+## Brain Hygiene
+
+When workflow contracts, artifacts, risks, or project conventions change, sync `.cursor/brain/` before finishing.
+If no sync is needed, state that explicitly.
+
+## Completion
+
+End task reports with:
+
+- Brain sync status
+- Confidence: HIGH | MEDIUM | LOW with a one-line reason

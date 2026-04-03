@@ -1,9 +1,9 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { parseWebVtt } from './parseVtt.js';
-import { runCmd } from './runCmd.js';
-import type { TranscriptSegment } from './types.js';
+import { runCmd } from '../shared/runCmd.js';
+import { parseWebVtt } from '../transcript/parseVtt.js';
+import type { TranscriptSegment } from '../transcript/types.js';
 
 export const DEFAULT_WHISPER_CMD =
     process.env.YT_TRANSCRIPT_WHISPER_CMD ??

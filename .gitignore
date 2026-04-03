@@ -33,6 +33,10 @@ coverage
 # MCP artifacts
 .playwright-mcp/
 
+# Claude local overrides
+.claude/*.local.md
+.claude/*.local.json
+
 # SQLite database files
 *.db
 *.db-shm
@@ -40,3 +44,4 @@ coverage
 
 # Project data
 data/
+artifacts/

@@ -1,0 +1,28 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(ls:*)",
+            "Bash(pwd)",
+            "Bash(which:*)",
+            "Bash(npm run:*)",
+            "Bash(npm test:*)",
+            "Bash(node:*)",
+            "Bash(npx tsc:*)",
+            "Bash(npx vitest:*)",
+            "Bash(yt-dlp:*)",
+            "Bash(ffmpeg:*)",
+            "WebSearch",
+            "WebFetch(domain:github.com)",
+            "WebFetch(domain:raw.githubusercontent.com)"
+        ],
+        "deny": [
+            "Bash(sudo:*)",
+            "Bash(rm -rf:*)",
+            "Bash(git reset --hard:*)",
+            "Bash(git checkout --:*)",
+            "Bash(git clean -fd:*)",
+            "Bash(git push --force:*)",
+            "Bash(git push --force-with-lease:*)"
+        ]
+    }
+}

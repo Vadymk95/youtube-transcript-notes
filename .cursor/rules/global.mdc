@@ -1,0 +1,25 @@
+---
+description: Global protocol and source-of-truth initialization for youtube-transcript-notes
+globs: ['**/*']
+alwaysApply: true
+priority: 100
+---
+
+# Global Protocol: youtube-transcript-notes
+
+## Initialization
+
+- Any non-trivial task starts by reading `.cursor/brain/PROJECT_CONTEXT.md`.
+- If the task touches workflow, artifacts, prompt assembly, or transcript generation, also read `.cursor/brain/MAP.md`, `.cursor/brain/SKELETONS.md`, and `.cursor/brain/DECISIONS.md`.
+- `.cursor/brain/` is the local source of truth for this repository.
+
+## Language
+
+- Russian for chat.
+- English for code, comments, filenames, docs, and rule content.
+
+## Repository Hygiene
+
+- Keep the project local-first. Do not switch the default flow to an external MCP or remote API unless the user explicitly asks.
+- No generated files in the repo root. Generated workflow outputs belong under `artifacts/videos/`.
+- Do not keep stale workflow files, duplicate rules, or outdated docs when the canonical path changes.
