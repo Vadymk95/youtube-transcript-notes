@@ -35,7 +35,7 @@ Per video, the workflow writes:
 - `transcript.md` — timestamped transcript, source of truth for raw content
 - `summary-prompt.md` — model-ready prompt assembled from the transcript
 - `summary.<replyLanguage>.md` — final structured handoff summary (default: `summary.ru.md`)
-- `manifest.json` — machine-friendly pointers and metadata for the agent
+- `manifest.json` — machine-friendly pointers and metadata for the agent (includes `videoDescription` when fetched from YouTube)
 
 The final summary must be validated before the workflow is considered complete.
 

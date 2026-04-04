@@ -35,6 +35,20 @@ describe('toMarkdown', () => {
         expect(md).not.toContain('video_id:');
         expect(md).not.toContain('title:');
         expect(md).not.toContain('language:');
+        expect(md).not.toContain('description:');
+    });
+
+    it('includes description in front matter when set', () => {
+        const meta: TranscriptMeta = {
+            source: 'subtitle-auto',
+            videoId: 'x',
+            title: 'T',
+            description: 'Links: https://a.test\nSecond line'
+        };
+        const md = toMarkdown(meta, [{ startSec: 0, endSec: 1, text: 'hi' }]);
+        expect(md).toContain(
+            `description: ${JSON.stringify('Links: https://a.test\nSecond line')}`
+        );
     });
 });
 

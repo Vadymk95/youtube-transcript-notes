@@ -43,7 +43,7 @@ artifacts/videos/<videoId>/
   manifest.json
 ```
 
-`manifest.json` is the machine-friendly entrypoint.
+`manifest.json` is the machine-friendly entrypoint (includes `transcriptFileChars`, `transcriptBodyChars`, and `videoDescription` for context budgeting and YouTube page links/notes).
 `summary-prompt.md` is the source used to draft the final answer.
 `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 `transcript.md` is the raw fallback source.

@@ -50,15 +50,22 @@ node dist/cli/transcriptCli.js "<url>" -o ./notes.md
 
 ## What it does
 
-1. Fetches **manual subtitles** with [yt-dlp](https://github.com/yt-dlp/yt-dlp) (WebVTT).
-2. If they are missing or too short, tries **auto-generated** captions.
-3. If that still fails (or you pass `--force-whisper`), downloads **audio** and runs a **local Whisper** command you configure (default expects the `whisper` CLI).
+1. Fetches **video metadata** (id, title, **description** from YouTube — links and notes end up in `transcript.md` front matter and `manifest.json` as `videoDescription`).
+2. Fetches **manual subtitles** with [yt-dlp](https://github.com/yt-dlp/yt-dlp) (WebVTT).
+3. If they are missing or too short, tries **auto-generated** captions.
+4. If that still fails (or you pass `--force-whisper`), downloads **audio** and runs a **local Whisper** command you configure (default expects the `whisper` CLI).
 
 Output:
 
 - **`md`** — YAML front matter plus segments like `**[MM:SS]** text` (default).
 - **`txt`** — plain text, no timestamps.
 - **Agent workflow artifacts** — transcript, summary prompt, language-specific summary file, and manifest JSON under `./artifacts/videos/<videoId>/`.
+
+## License, contributing, troubleshooting
+
+- [LICENSE](LICENSE) — MIT
+- [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup and PR checklist
+- [docs/troubleshooting.md](docs/troubleshooting.md) — yt-dlp, ffmpeg, Whisper, HTTP 429, env flags
 
 ## Requirements
 

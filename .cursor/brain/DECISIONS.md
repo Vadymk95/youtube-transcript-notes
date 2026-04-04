@@ -1,5 +1,15 @@
 # Architectural Decisions
 
+## [2026-04] MIT license for OSS readiness
+
+**Decision**: Ship the project under the **MIT License** (`LICENSE` at repo root, `license` field in `package.json`).
+
+**Why**: The project roadmap treats a public license as part of the OSS baseline; MIT is a common default for small developer tools and keeps reuse friction low.
+
+**Trade-off**: Patent and liability terms are minimal compared to Apache-2.0; change only if the maintainer needs stricter patent grant language.
+
+---
+
 ## [2026-04] Local transcript workflow is the default integration
 
 **Decision**: The default agent integration is the local CLI workflow, not a custom MCP server and not a remote summarization API.
@@ -70,6 +80,16 @@
 
 ---
 
+## [2026-04] Video metadata via `yt-dlp --dump-single-json`
+
+**Decision**: `fetchVideoInfo()` uses `--dump-single-json` (not separate `--print` lines) and exposes **`description`** alongside `id` and `title`.
+
+**Why**: The YouTube description often contains links, chapters, and sponsor notes that never appear in captions. JSON avoids multiline `--print` ambiguity for titles/descriptions.
+
+**Trade-off**: One larger metadata fetch per prepare run; descriptions can be long and grow `transcript.md` / model context. The field is omitted from YAML when empty.
+
+---
+
 ## [2026-04] Collapse rolling auto captions only
 
 **Decision**: After parsing WebVTT from `subtitle-auto`, run `collapseRollingAutoCaptions()` to merge consecutive cues whose text extends the previous cue by prefix, then trim or drop repeated leading text from neighboring sliding-window cues by suffix-prefix overlap. Do not apply to `subtitle-manual` or Whisper.
@@ -77,6 +97,16 @@
 **Why**: YouTube auto-generated VTT uses both rolling/live-style prefix growth and sliding windows where the next cue drops the beginning of the phrase but keeps a long overlapping tail. Prefix-merge removes direct growth chains; overlap trimming produces a more readable transcript than aggressively merging whole windows into long paragraphs. Manual tracks rarely follow that pattern, and applying overlap heuristics outside auto-captions would risk incorrectly altering distinct utterances.
 
 **Trade-off**: Conservative overlap thresholds reduce duplicates, but edge cases can still leave some redundant lines or, if thresholds are loosened too far, trim legitimate repeated phrasing across sentence boundaries.
+
+---
+
+## [2026-04] Manifest transcript character metrics
+
+**Decision**: `manifest.json` written by `prepareAgentWorkflow()` includes `transcriptFileChars` and `transcriptBodyChars` (JavaScript string lengths, UTF-16 code units) derived from `transcript.md`.
+
+**Why**: There is no in-repo maximum video duration; the practical limit for the summary step is model context. Exposing counts lets agents and humans estimate fit before loading `summary-prompt.md`.
+
+**Trade-off**: Counts are not token counts and not grapheme-accurate for all Unicode; they are a cheap, stable signal only.
 
 ---
 

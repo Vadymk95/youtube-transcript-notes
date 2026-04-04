@@ -9,4 +9,6 @@ export type TranscriptMeta = {
     language?: string;
     videoId?: string;
     title?: string;
+    /** YouTube description when fetched (links, chapters, etc.). */
+    description?: string;
 };

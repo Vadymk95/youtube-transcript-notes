@@ -10,9 +10,103 @@ vi.mock('@/shared/runCmd', () => ({
     runCmd: runCmdMock
 }));
 
-import { downloadAutoSubs, downloadManualSubs } from '@/pipeline/ytDlp';
+import {
+    downloadAutoSubs,
+    downloadManualSubs,
+    fetchVideoInfo,
+    parseVideoInfoFromDumpJson
+} from '@/pipeline/ytDlp';
 
 const defaultSubLangs = 'en,en-US,en-orig,ru,uk,-live_chat';
+
+describe('parseVideoInfoFromDumpJson', () => {
+    it('reads id, title, and description', () => {
+        const info = parseVideoInfoFromDumpJson(
+            JSON.stringify({
+                id: 'abc',
+                title: 'Hello',
+                description: 'More info\nhttps://x.test'
+            })
+        );
+        expect(info).toEqual({
+            id: 'abc',
+            title: 'Hello',
+            description: 'More info\nhttps://x.test'
+        });
+    });
+
+    it('uses id as title when title missing', () => {
+        const info = parseVideoInfoFromDumpJson(JSON.stringify({ id: 'only' }));
+        expect(info.title).toBe('only');
+        expect(info.description).toBe('');
+    });
+
+    it('normalizes empty description to empty string', () => {
+        const info = parseVideoInfoFromDumpJson(
+            JSON.stringify({ id: 'a', title: 'T', description: '   ' })
+        );
+        expect(info.description).toBe('');
+    });
+
+    it('throws on invalid JSON with SyntaxError chained as cause', () => {
+        try {
+            parseVideoInfoFromDumpJson('not json');
+            expect.fail('expected throw');
+        } catch (e) {
+            expect(e).toBeInstanceOf(Error);
+            const err = e as Error;
+            expect(err.message).toContain('yt-dlp did not return valid JSON');
+            expect(err.cause).toBeInstanceOf(SyntaxError);
+        }
+    });
+
+    it('throws when id missing', () => {
+        expect(() => parseVideoInfoFromDumpJson(JSON.stringify({ title: 'x' }))).toThrow(
+            'yt-dlp did not return video id'
+        );
+    });
+
+    it('throws when JSON root is null', () => {
+        expect(() => parseVideoInfoFromDumpJson('null')).toThrow(
+            'yt-dlp JSON metadata was not an object'
+        );
+    });
+
+    it('throws when id is empty string', () => {
+        expect(() => parseVideoInfoFromDumpJson(JSON.stringify({ id: '' }))).toThrow(
+            'yt-dlp did not return video id'
+        );
+    });
+
+    it('uses id as title when title is only whitespace', () => {
+        const info = parseVideoInfoFromDumpJson(
+            JSON.stringify({ id: 'vid9', title: '   \t  ', description: 'd' })
+        );
+        expect(info.title).toBe('vid9');
+        expect(info.description).toBe('d');
+    });
+});
+
+describe('fetchVideoInfo', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('calls yt-dlp with dump-single-json and parses stdout', async () => {
+        const url = 'https://www.youtube.com/watch?v=abc';
+        runCmdMock.mockResolvedValue({
+            stdout: JSON.stringify({ id: 'abc', title: 'Hello', description: 'More' }),
+            stderr: ''
+        });
+
+        const info = await fetchVideoInfo(url);
+
+        expect(runCmdMock).toHaveBeenCalledTimes(1);
+        const [, args] = runCmdMock.mock.calls[0] as [string, string[]];
+        expect(args).toEqual(['--skip-download', '--no-warnings', '--dump-single-json', url]);
+        expect(info).toEqual({ id: 'abc', title: 'Hello', description: 'More' });
+    });
+});
 
 describe('ytDlp subtitle downloads', () => {
     let workDir: string;

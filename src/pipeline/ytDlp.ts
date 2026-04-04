@@ -22,27 +22,43 @@ function subLangsArg(): string {
 export type VideoInfo = {
     id: string;
     title: string;
+    /** YouTube video description (may include links). Empty string when absent. */
+    description: string;
 };
+
+/**
+ * Parses stdout from `yt-dlp --dump-single-json` (single video).
+ * Exported for unit tests.
+ */
+export function parseVideoInfoFromDumpJson(stdout: string): VideoInfo {
+    let data: unknown;
+    try {
+        data = JSON.parse(stdout.trim());
+    } catch (cause) {
+        throw new Error('yt-dlp did not return valid JSON for video metadata', { cause });
+    }
+    if (!data || typeof data !== 'object') {
+        throw new Error('yt-dlp JSON metadata was not an object');
+    }
+    const o = data as Record<string, unknown>;
+    const id = typeof o.id === 'string' ? o.id : '';
+    if (!id) {
+        throw new Error('yt-dlp did not return video id');
+    }
+    const title = typeof o.title === 'string' && o.title.trim() !== '' ? o.title : id;
+    const description =
+        typeof o.description === 'string' && o.description.trim() !== '' ? o.description : '';
+    return { id, title, description };
+}
 
 export async function fetchVideoInfo(url: string): Promise<VideoInfo> {
     const { stdout } = await runCmd(YT_DLP, [
         '--skip-download',
-        '--print',
-        '%(id)s',
-        '--print',
-        '%(title)s',
+        '--no-warnings',
+        '--dump-single-json',
         url
     ]);
-    const lines = stdout
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean);
-    const id = lines[0];
-    const title = lines.slice(1).join('\n');
-    if (!id) {
-        throw new Error('yt-dlp did not return video id');
-    }
-    return { id, title: title || id };
+    return parseVideoInfoFromDumpJson(stdout);
 }
 
 async function listVttFiles(dir: string): Promise<string[]> {

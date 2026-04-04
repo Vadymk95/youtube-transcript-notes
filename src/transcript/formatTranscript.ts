@@ -25,6 +25,9 @@ export function toMarkdown(meta: TranscriptMeta, segments: TranscriptSegment[]):
     if (meta.language) {
         headerLines.push(`language: ${meta.language}`);
     }
+    if (meta.description !== undefined && meta.description !== '') {
+        headerLines.push(`description: ${JSON.stringify(meta.description)}`);
+    }
     headerLines.push('---', '');
 
     const body = segments

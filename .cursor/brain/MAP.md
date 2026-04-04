@@ -14,14 +14,23 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 
 `fixtures/transcript-quality/` stores the transcript quality corpus with language/tag metadata. `src/transcript/qualityFixtureLoader.ts` loads and validates that corpus, `src/transcript/qualityHarness.ts` computes metrics and acceptance checks over the current `collapseRollingAutoCaptions()` behavior (overlap/prefix metrics use `suffixPrefixOverlap.ts`), and `src/cli/transcriptQualityCli.ts` exposes this as `npm run eval:transcript-quality`. `npm run ci` runs this harness after tests and build so caption-cleanup regressions fail CI.
 
+## Optional process docs (cross-repo and in-repo rhythm)
+
+- Sibling **agent-autoresearch** harness for bounded tasks: `docs/autoresearch-cross-repo-workflow.md` (contract and ledger; no auto-generated patches).
+- In-repo framing of bounded verify/keep loops aligned with that style: `docs/bounded-improvement.md`.
+
 ## File responsibilities
 
+- `LICENSE`, `CONTRIBUTING.md`, `docs/troubleshooting.md` — OSS contributor baseline (see roadmap “What Is Already Strong”)
+- `.github/workflows/ci.yml` — GitHub Actions running `npm run ci`
+- `.github/ISSUE_TEMPLATE/` — bug report templates (transcript extraction, caption quality, summary validation)
 - `src/cli/` — `transcriptCli` (standalone URL → transcript file; npm `dev` / packaged `yt-transcript`); `agentWorkflowCli`, `summaryValidatorCli`, `transcriptQualityCli` for prepare bundle, summary validation, and caption-quality eval
 - `src/summary/agentWorkflow.ts` — artifact paths, prompt assembly, rollback of partial prepare outputs (not the user-owned summary file)
 - `src/summary/outputLanguage.ts` — single source of truth for reply language code, headings, summary filename, ambiguity fallback, and prompt placeholders
 - `src/summary/summaryContract.ts` — summary shape and validation rules derived from the configured output language
+- `src/summary/transcriptMetrics.ts` — transcript file and body character counts for `manifest.json` context budgeting
 - `src/pipeline/pipeline.ts` — subtitle and Whisper orchestration
-- `src/pipeline/ytDlp.ts` — metadata and downloads; `--sub-langs` from `YT_TRANSCRIPT_SUB_LANGS` or a bounded default
+- `src/pipeline/ytDlp.ts` — metadata (`fetchVideoInfo` via `--dump-single-json`: id, title, description) and downloads; `--sub-langs` from `YT_TRANSCRIPT_SUB_LANGS` or a bounded default
 - `src/pipeline/whisperFallback.ts` — Whisper invocation and VTT loading
 - `src/transcript/` — VTT parsing, picking, auto-caption collapse, formatting; `suffixPrefixOverlap.ts` — shared adjacency overlap for collapse + quality metrics; `types.ts` holds transcript metadata types used by manifest and pipeline
 - `fixtures/transcript-quality/` plus `src/transcript/qualityFixtureLoader.ts` / `qualityHarness.ts` — file-based transcript quality corpus, loader, metrics, and acceptance gates for auto-caption cleanup changes
@@ -30,4 +39,4 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 
 ## Artifact contract
 
-Each video folder under `artifacts/videos/<videoId>/` holds `transcript.md`, `summary-prompt.md`, `summary.<replyLanguage>.md`, and `manifest.json`. Agent order: read manifest and prompt, write the language-specific summary file, validate, use `transcript.md` only as fallback or deep check.
+Each video folder under `artifacts/videos/<videoId>/` holds `transcript.md`, `summary-prompt.md`, `summary.<replyLanguage>.md`, and `manifest.json`. `manifest.json` includes `transcriptFileChars`, `transcriptBodyChars`, and **`videoDescription`** (YouTube description text, may be empty). `transcript.md` YAML may include **`description`** when non-empty. Agent order: read manifest and prompt, write the language-specific summary file, validate, use `transcript.md` only as fallback or deep check.

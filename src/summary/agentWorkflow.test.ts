@@ -72,7 +72,11 @@ language: en
 **[00:00]** Hello there
 `;
 
-        yt.fetchVideoInfo.mockResolvedValue({ id: 'abc123', title: 'Amazing video' });
+        yt.fetchVideoInfo.mockResolvedValue({
+            id: 'abc123',
+            title: 'Amazing video',
+            description: ''
+        });
         pipeline.runPipeline.mockImplementation(async ({ outputPath }: { outputPath: string }) => {
             await writeFile(outputPath, transcript, 'utf8');
             return {
@@ -120,11 +124,18 @@ language: en
             summaryPath: string;
             summaryPromptPath: string;
             transcriptPath: string;
+            transcriptFileChars: number;
+            transcriptBodyChars: number;
+            videoDescription: string;
         };
         expect(manifest.transcriptPath).toBe(result.transcriptPath);
         expect(manifest.summaryPromptPath).toBe(result.summaryPromptPath);
         expect(manifest.summaryPath).toBe(result.summaryPath);
         expect(manifest.replyLanguage).toBe('ru');
+        expect(manifest.videoDescription).toBe('');
+        expect(manifest.transcriptFileChars).toBe(transcript.length);
+        expect(manifest.transcriptBodyChars).toBeLessThan(manifest.transcriptFileChars);
+        expect(manifest.transcriptBodyChars).toBeGreaterThan(0);
     });
 });
 

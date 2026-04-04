@@ -10,6 +10,7 @@ import {
     promptTemplateVariables,
     summaryFileName
 } from '@/summary/outputLanguage';
+import { computeTranscriptCharMetrics } from '@/summary/transcriptMetrics';
 import type { TranscriptMeta } from '@/transcript/types';
 
 export const DEFAULT_ARTIFACTS_DIR = path.join('artifacts', 'videos');
@@ -41,9 +42,15 @@ export type AgentWorkflowManifest = {
     videoUrl: string;
     videoId: string;
     videoTitle: string;
+    /** YouTube description when present (same text as `transcript.md` front matter). */
+    videoDescription: string;
     transcriptFormat: 'md';
     transcriptSource: TranscriptMeta['source'];
     transcriptLanguage?: string;
+    /** UTF-16 code units; full transcript.md size (includes YAML front matter). */
+    transcriptFileChars: number;
+    /** UTF-16 code units; timestamped body only (excludes front matter when present). */
+    transcriptBodyChars: number;
     transcriptPath: string;
     summaryPromptPath: string;
     summaryPath: string;
@@ -133,6 +140,7 @@ export async function prepareAgentWorkflow(
             loadPromptTemplate(),
             readFile(artifactPaths.transcriptPath, 'utf8')
         ]);
+        const charMetrics = computeTranscriptCharMetrics(transcript);
         const prompt = assembleSummaryPrompt(template, transcript);
         await writeFile(artifactPaths.summaryPromptPath, prompt, 'utf8');
         writtenArtifactPaths.push(artifactPaths.summaryPromptPath);
@@ -142,9 +150,12 @@ export async function prepareAgentWorkflow(
             videoUrl: options.url,
             videoId: videoInfo.id,
             videoTitle: videoInfo.title,
+            videoDescription: videoInfo.description,
             transcriptFormat: 'md',
             transcriptSource: pipelineResult.meta.source,
             transcriptLanguage: pipelineResult.meta.language,
+            transcriptFileChars: charMetrics.fileChars,
+            transcriptBodyChars: charMetrics.bodyChars,
             transcriptPath: artifactPaths.transcriptPath,
             summaryPromptPath: artifactPaths.summaryPromptPath,
             summaryPath: artifactPaths.summaryPath,

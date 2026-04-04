@@ -46,6 +46,16 @@ function subMeta(
     return language === undefined ? { source } : { source, language };
 }
 
+function metaFromVideoInfo(
+    info: VideoInfo
+): Pick<TranscriptMeta, 'videoId' | 'title' | 'description'> {
+    return {
+        videoId: info.id,
+        title: info.title,
+        ...(info.description !== '' ? { description: info.description } : {})
+    };
+}
+
 async function bestSubtitleSegments(
     url: string,
     workDir: string,
@@ -114,7 +124,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
                 fromSubs.meta.source === 'subtitle-auto'
                     ? collapseRollingAutoCaptions(fromSubs.segments)
                     : fromSubs.segments;
-            meta = { ...fromSubs.meta, videoId: info.id, title: info.title };
+            meta = { ...fromSubs.meta, ...metaFromVideoInfo(info) };
         } else {
             const whisperDir = path.join(workDir, 'whisper-out');
             await mkdir(whisperDir, { recursive: true });
@@ -123,8 +133,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
             segments = await loadSegmentsFromVttFile(vttPath);
             meta = {
                 source: 'whisper',
-                videoId: info.id,
-                title: info.title
+                ...metaFromVideoInfo(info)
             };
         }
 

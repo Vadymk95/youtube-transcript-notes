@@ -1,0 +1,35 @@
+name: Caption quality bug
+description: Transcript exists but auto-caption cleanup is wrong (duplicates, dropped text, bad merges).
+labels: [captions, quality]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Use this when subtitles were fetched but the **cleaned** transcript in `transcript.md` looks wrong compared to raw YouTube captions.
+    - type: textarea
+      id: expected
+      attributes:
+          label: What you expected
+      validations:
+          required: true
+    - type: textarea
+      id: actual
+      attributes:
+          label: What you got
+          description: Paste a short excerpt from `transcript.md` or describe the pattern (e.g. “sentence X was merged into Y”).
+      validations:
+          required: true
+    - type: textarea
+      id: repro
+      attributes:
+          label: How to reproduce
+          description: Video URL (if public), language track, and whether source was subtitle-auto vs manual vs Whisper.
+      validations:
+          required: true
+    - type: textarea
+      id: fixture
+      attributes:
+          label: Fixture idea (optional)
+          description: If you can, suggest a minimal VTT or segment list that could go under `fixtures/transcript-quality/`.
+      validations:
+          required: false

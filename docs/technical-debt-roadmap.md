@@ -43,6 +43,15 @@ These are assets, not debt. Protect them.
 - Transcript quality harness with fixed fixtures and acceptance gates
 - Clear separation of concerns across `pipeline`, `transcript`, `summary`, and `cli`
 - Open-source friendly README and centralized summary output language config
+- OSS contributor baseline: `LICENSE` (MIT), `CONTRIBUTING.md`, GitHub Actions CI (`.github/workflows/ci.yml`), issue templates, `docs/troubleshooting.md`
+
+## Reliability handoff (YouTube 429, Whisper, description)
+
+Real-world run: default multi-language subtitle fetch hit **HTTP 429**, then **Whisper** was not installed and the run failed. Narrowing `YT_TRANSCRIPT_SUB_LANGS` (e.g. to `ru`) avoided 429 for that video.
+
+- **Prompt for another model / planner** (incident + roadmap alignment): [`docs/reliability-handoff-prompt.md`](./reliability-handoff-prompt.md)
+- **Implemented:** `fetchVideoInfo` uses `yt-dlp --dump-single-json` so the **video description** is available in `transcript.md` front matter (`description`) and in `manifest.json` as **`videoDescription`** (links and notes from the YouTube page).
+- **Still open (code / UX hardening):** sequential subtitle language attempts / retry on 429, clearer errors when Whisper is missing before expensive steps. Operational mitigations: `docs/troubleshooting.md`.
 
 ## Competitive Reality
 
@@ -197,30 +206,11 @@ Acceptance signal:
 
 - user can switch output language without editing TypeScript source
 
-#### 3. OSS release surface is incomplete
-
-Current state:
-
-- repo is structured well
-- but public project basics are still missing
-
-Likely missing or weak:
-
-- `LICENSE`
-- `CONTRIBUTING.md`
-- public release posture
-- GitHub Actions / visible CI for contributors
-- issue templates / bug-report format
-
-Why it matters:
-
-- people judge trust quickly from OSS hygiene
-
 ### P1: Quality and trust gaps
 
 These matter for long-term defensibility.
 
-#### 4. Transcript quality fixture corpus is too small
+#### 3. Transcript quality fixture corpus is too small
 
 Current state:
 
@@ -246,7 +236,7 @@ Acceptance signal:
 
 - at least a small but representative multilingual corpus with protected fixtures and real-world fixtures
 
-#### 5. No explicit benchmark against external alternatives
+#### 4. No explicit benchmark against external alternatives
 
 Current state:
 
@@ -275,7 +265,7 @@ Recommended direction:
 
 These may become important, but they are not the right first moves.
 
-#### 6. No batch mode
+#### 5. No batch mode
 
 Potential value:
 
@@ -294,7 +284,7 @@ Recommendation:
 
 - treat as post-v1 or power-user feature
 
-#### 7. No search / content-library workflow
+#### 6. No search / content-library workflow
 
 Potential value:
 
@@ -311,7 +301,7 @@ Recommendation:
 
 - only pursue after the single-video workflow is clearly strong and adopted
 
-#### 8. No UI or extension
+#### 7. No UI or extension
 
 Potential value:
 
@@ -381,31 +371,9 @@ The best differentiator is:
 
 ## Suggested Roadmap
 
-### Phase 1: OSS readiness and low-friction product basics
+**Public OSS baseline is in place** (`LICENSE`, `CONTRIBUTING.md`, CI, issue templates, `docs/troubleshooting.md`). Treat further release polish (semver story, npm publish, marketing copy) as optional unless you are shipping broadly.
 
-Priority: Highest
-
-Goals:
-
-- make the project credible as a public repository
-- remove obvious adoption blockers
-
-Work items:
-
-1. Add `LICENSE`
-2. Add `CONTRIBUTING.md`
-3. Add GitHub Actions for `npm run ci`
-4. Add issue templates for:
-    - transcript extraction failure
-    - caption quality bug
-    - summary validation bug
-5. Add troubleshooting section for `yt-dlp`, `ffmpeg`, Whisper, and rate limits
-
-Why:
-
-- improves trust and contributor readiness immediately
-
-### Phase 2: Productize the current strengths
+### Productize the current strengths
 
 Priority: Highest
 
@@ -427,7 +395,7 @@ Why:
 
 - this closes the biggest gap versus simpler competitors while preserving the trustworthy architecture
 
-### Phase 3: Strengthen quality moat
+### Strengthen quality moat
 
 Priority: High
 
@@ -446,7 +414,7 @@ Why:
 
 - quality is one of the few areas where this project can defend a stronger position than transcript fetch libraries
 
-### Phase 4: Evaluate carefully selected expansion paths
+### Evaluate expansion paths (carefully)
 
 Priority: Medium
 
@@ -468,16 +436,15 @@ Guardrails:
 
 ## Priority Table
 
-| Item                                        | Priority | Why now                     | Why not later                           |
-| ------------------------------------------- | -------- | --------------------------- | --------------------------------------- |
-| OSS hygiene (`LICENSE`, `CONTRIBUTING`, CI) | P0       | Needed for public trust     | Cheap now, awkward later                |
-| Runtime language selection                  | P0       | Clear user pain             | Blocks multilingual adoption            |
-| One-command summary flow                    | P0       | Biggest UX gap              | Strongest productization move           |
-| Expand fixture corpus                       | P1       | Protects cleanup quality    | Needed before wider usage               |
-| External benchmark set                      | P1       | Makes strategy measurable   | Prevents intuition-only decisions       |
-| Batch mode                                  | P2       | Useful, but not core yet    | Can wait until single-video UX is solid |
-| Search / archive workflows                  | P2       | Promising adjacent category | Too early and too broad                 |
-| UI / extension                              | P2       | Big adoption upside         | Too distracting right now               |
+| Item                       | Priority | Why now                     | Why not later                           |
+| -------------------------- | -------- | --------------------------- | --------------------------------------- |
+| Runtime language selection | P0       | Clear user pain             | Blocks multilingual adoption            |
+| One-command summary flow   | P0       | Biggest UX gap              | Strongest productization move           |
+| Expand fixture corpus      | P1       | Protects cleanup quality    | Needed before wider usage               |
+| External benchmark set     | P1       | Makes strategy measurable   | Prevents intuition-only decisions       |
+| Batch mode                 | P2       | Useful, but not core yet    | Can wait until single-video UX is solid |
+| Search / archive workflows | P2       | Promising adjacent category | Too early and too broad                 |
+| UI / extension             | P2       | Big adoption upside         | Too distracting right now               |
 
 ## Definition Of “Good Next Version”
 
@@ -487,17 +454,15 @@ The next strong milestone should satisfy all of the following:
 - a user can switch summary language without editing source code
 - a user can generate a validated summary with one primary command
 - CI remains green and quality fixtures cover more than the current narrow set
-- the repo looks credibly open-source and contributor-friendly
 
 ## Final Recommendation
 
 If only a few things get built next, choose these:
 
-1. OSS release hygiene
-2. Runtime language selection
-3. One-command summary generation
-4. Expanded quality fixture corpus
-5. External benchmark set
+1. Runtime language selection
+2. One-command summary generation
+3. Expanded quality fixture corpus
+4. External benchmark set
 
 Everything else should be judged against one question:
 

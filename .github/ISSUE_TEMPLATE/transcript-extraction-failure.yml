@@ -1,0 +1,43 @@
+name: Transcript extraction failure
+description: Subtitles or Whisper did not produce a usable transcript (yt-dlp, ffmpeg, network).
+labels: [transcript]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Use this when `npm run dev`, `npm run agent:prepare`, or the CLI fails before you have a good `transcript.md`.
+    - type: input
+      id: version
+      attributes:
+          label: Repo version or commit
+          description: e.g. npm version from package.json, or `git rev-parse --short HEAD`
+      validations:
+          required: false
+    - type: textarea
+      id: url
+      attributes:
+          label: YouTube URL (if shareable)
+          description: Omit or redact if private. A short public test video is ideal.
+      validations:
+          required: false
+    - type: textarea
+      id: command
+      attributes:
+          label: Exact command you ran
+          placeholder: npm run agent:prepare -- "https://..."
+      validations:
+          required: true
+    - type: textarea
+      id: environment
+      attributes:
+          label: Environment
+          description: OS, Node version (`node -v`), yt-dlp version (`yt-dlp --version`), whether ffmpeg and Whisper are installed.
+      validations:
+          required: true
+    - type: textarea
+      id: logs
+      attributes:
+          label: Logs / error output
+          description: If possible, rerun with `YT_TRANSCRIPT_DEBUG=1` or `NODE_DEBUG=yt-transcript:ytdlp` and paste relevant lines.
+      validations:
+          required: true

@@ -1,0 +1,33 @@
+name: Summary validation bug
+description: agent:check-summary fails incorrectly or the contract seems wrong.
+labels: [summary, validator]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Use this when `npm run agent:check-summary -- "<path>"` fails (or passes) in a way that conflicts with `prompts/video-notes-prompt.md` or `src/summary/outputLanguage.ts`.
+    - type: textarea
+      id: command
+      attributes:
+          label: Exact validator command
+      validations:
+          required: true
+    - type: textarea
+      id: output
+      attributes:
+          label: Validator output / errors
+      validations:
+          required: true
+    - type: textarea
+      id: summary_snippet
+      attributes:
+          label: Relevant summary excerpt (optional)
+          description: Redact private content if needed.
+      validations:
+          required: false
+    - type: textarea
+      id: expected
+      attributes:
+          label: What you think should happen
+      validations:
+          required: true

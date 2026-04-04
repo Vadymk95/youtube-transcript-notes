@@ -54,7 +54,7 @@ const tinyVtt = `WEBVTT
 hello
 `;
 
-const videoInfo = { id: 'vid', title: 'Test video' };
+const videoInfo = { id: 'vid', title: 'Test video', description: '' };
 
 function baseOptions(outputPath: string) {
     return {
@@ -107,6 +107,26 @@ describe('runPipeline', () => {
         const body = await readFile(outFile, 'utf8');
         expect(body).toContain('source: subtitle-manual');
         expect(body).toContain('**[00:00]**');
+    });
+
+    it('embeds video description in transcript front matter when provided', async () => {
+        yt.downloadManualSubs.mockImplementation(async (_url: string, workDir: string) => {
+            const subDir = path.join(workDir, 'manual-subs');
+            await mkdir(subDir, { recursive: true });
+            const p = path.join(subDir, 'vid.en.vtt');
+            await writeFile(p, longVtt, 'utf8');
+            return { kind: 'manual' as const, files: [p] };
+        });
+        yt.downloadAutoSubs.mockResolvedValue({ kind: 'auto', files: [] });
+
+        await runPipeline({
+            ...baseOptions(outFile),
+            videoInfo: { id: 'vid', title: 'Test video', description: 'See https://x.test' }
+        });
+
+        const body = await readFile(outFile, 'utf8');
+        expect(body).toContain('description: ');
+        expect(body).toContain('https://x.test');
     });
 
     it('uses auto subs when manual is short but auto meets minSubtitleChars', async () => {
