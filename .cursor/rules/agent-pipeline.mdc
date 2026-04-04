@@ -19,11 +19,11 @@ Before implementation:
 
 When the user provides a YouTube URL and asks for a transcript, notes, summary, or plan:
 
-1. Run `npm run agent:prepare -- "<url>"` from the repo root.
+1. Run `npm run agent:prepare -- "<url>"` from the repo root (or `npm run agent:complete -- "<url>"` when the user has configured `YT_SUMMARY_CMD` / `--summary-cmd` and wants validation in one step).
 2. Read `manifest.json`.
 3. Read `summary-prompt.md`.
 4. Write the final handoff summary to `summary.<replyLanguage>.md` (default: `summary.ru.md`).
-5. Run `npm run agent:check-summary -- "<summary-file>"`.
+5. Run `npm run agent:check-summary -- "<summary-file>"` (add `--reply-lang` if `manifest.json` `replyLanguage` is not `ru`).
 6. If validation fails, rewrite the summary and run the check again.
 7. Read `transcript.md` only if deeper validation is needed.
 8. Return the final answer in the configured reply language.
@@ -34,7 +34,7 @@ Hard rules:
 - Do not skip transcript generation just because a prompt template already exists.
 - Do not stop at `summary-prompt.md`; the workflow is incomplete until `summary.<replyLanguage>.md` exists and passes validation.
 - Do not add inferred facts, historical context, motives, audience assumptions, or significance unless they are explicit in the transcript.
-- If something is missing from the transcript, say `Не указано в транскрипте` or put it in `## Пробелы и неоднозначности`.
+- If something is missing from the transcript, use the **ambiguity fallback** string from the active language preset (see `manifest.json` `replyLanguage` and `src/summary/outputLanguage.ts`) or put the uncertainty in the **gaps** section heading required for that language.
 - If the workflow fails, explain which dependency is missing or which command failed.
 
 ## Phase 3: Workflow Changes

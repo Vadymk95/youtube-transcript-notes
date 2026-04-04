@@ -24,7 +24,8 @@ Quick reference for the most common **local-first** pipeline failures. For incid
 
 ## Summary step
 
-- **`agent:check-summary` fails**: compare your `summary.<lang>.md` headings to `src/summary/outputLanguage.ts` and [video-notes-prompt.md](../prompts/video-notes-prompt.md).
+- **`agent:check-summary` fails**: ensure `--reply-lang` matches how you wrote the summary (and matches `manifest.json` `replyLanguage` after `agent:prepare`). Compare headings to the preset in `src/summary/outputLanguage.ts` and [video-notes-prompt.md](../prompts/video-notes-prompt.md).
+- **`agent:complete` fails**: ensure `YT_SUMMARY_CMD` or `--summary-cmd` writes **non-empty** markdown to `{{SUMMARY_OUT_PATH}}`. Validation errors are printed as JSON; fix the model / prompt or edit the summary file and re-run `agent:check-summary`.
 - **Prompt too large for the model**: check `transcriptBodyChars` in `manifest.json` (rough token planning: ~4 characters per token is a common heuristic, plus template overhead).
 
 ## Still stuck

@@ -27,7 +27,7 @@ import {
     prepareAgentWorkflow,
     rollbackAgentArtifactFiles
 } from '@/summary/agentWorkflow';
-import { summaryFileName } from '@/summary/outputLanguage';
+import { SUMMARY_LANGUAGE_PRESETS, summaryFileName } from '@/summary/outputLanguage';
 
 describe('assembleSummaryPrompt', () => {
     it('replaces transcript placeholder', () => {
@@ -43,6 +43,17 @@ describe('assembleSummaryPrompt', () => {
         expect(() => assembleSummaryPrompt('No placeholder', 'hello')).toThrow(
             'Prompt template must contain {{TRANSCRIPT}} placeholder'
         );
+    });
+
+    it('uses English preset variables when lang is en', () => {
+        const prompt = assembleSummaryPrompt(
+            'Front\n---\n{{OUTPUT_LANGUAGE_NAME}}\n{{TRANSCRIPT}}',
+            'line\n',
+            SUMMARY_LANGUAGE_PRESETS.en
+        );
+        expect(prompt).toContain('English');
+        expect(prompt).toContain('line');
+        expect(prompt).not.toContain('{{TRANSCRIPT}}');
     });
 });
 
@@ -136,6 +147,45 @@ language: en
         expect(manifest.transcriptFileChars).toBe(transcript.length);
         expect(manifest.transcriptBodyChars).toBeLessThan(manifest.transcriptFileChars);
         expect(manifest.transcriptBodyChars).toBeGreaterThan(0);
+    });
+
+    it('writes summary.en.md when replyLanguage is en', async () => {
+        const url = 'https://www.youtube.com/watch?v=xyz999';
+        const transcript = `---
+source: subtitle-manual
+video_id: xyz999
+title: "Test"
+---
+
+**[00:00]** Hi
+`;
+
+        yt.fetchVideoInfo.mockResolvedValue({
+            id: 'xyz999',
+            title: 'Test',
+            description: ''
+        });
+        pipeline.runPipeline.mockImplementation(async ({ outputPath }: { outputPath: string }) => {
+            await writeFile(outputPath, transcript, 'utf8');
+            return {
+                writtenPath: outputPath,
+                meta: {
+                    source: 'subtitle-manual' as const,
+                    videoId: 'xyz999',
+                    title: 'Test'
+                },
+                segmentCount: 1
+            };
+        });
+
+        const result = await prepareAgentWorkflow({ url, artifactsDir, replyLanguage: 'en' });
+
+        expect(result.replyLanguage).toBe('en');
+        expect(result.summaryPath).toBe(
+            path.join(artifactsDir, 'xyz999', summaryFileName(SUMMARY_LANGUAGE_PRESETS.en))
+        );
+        const prompt = await readFile(result.summaryPromptPath, 'utf8');
+        expect(prompt).toContain('## What the video is about');
     });
 });
 

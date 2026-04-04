@@ -63,8 +63,11 @@ Main commands:
 
 ```bash
 npm run agent:prepare -- "<youtube-url>"
+npm run agent:complete -- "<youtube-url>" --prepare-only
 npm run ci
 ```
+
+Summary output language: default `ru`; use **`YT_SUMMARY_LANG=en`** or **`npm run agent:prepare -- "<url>" --reply-lang en`**, then **`agent:check-summary`** with the same `--reply-lang` if needed (see README). Optional **`agent:complete`** runs prepare + **`YT_SUMMARY_CMD`** + validate when a local summarizer is configured.
 
 ## Rules
 

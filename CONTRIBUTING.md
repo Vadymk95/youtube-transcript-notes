@@ -35,9 +35,21 @@ npm run eval:transcript-quality
 
 Protected fixtures must not regress.
 
+## Agent bundle commands
+
+```bash
+npm run agent:prepare -- "<youtube-url>"
+npm run agent:check-summary -- "artifacts/videos/<videoId>/summary.<replyLanguage>.md"
+npm run agent:complete -- "<youtube-url>" --prepare-only
+```
+
+Run **`agent:check-summary`** after the handoff `summary.<replyLanguage>.md` exists (`manifest.json` shows `replyLanguage`; pass `--reply-lang` when not default `ru`). See **Summary contract** below.
+
+Full loop with a **local** summarizer: configure `YT_SUMMARY_CMD` (see README), then `npm run agent:complete -- "<youtube-url>"`. The repo does not run a remote LLM by default.
+
 ## Summary contract
 
-Headings, validator rules, and `prompts/video-notes-prompt.md` must stay aligned with `src/summary/outputLanguage.ts`. After changing any of these, run `npm run ci`.
+Headings, validator rules, and `prompts/video-notes-prompt.md` must stay aligned with the presets in `src/summary/outputLanguage.ts`. End users pick `ru` or `en` via `YT_SUMMARY_LANG` / `--reply-lang`; new locales require a new preset entry. After changing any of these, run `npm run ci`.
 
 ## Where to get help
 

@@ -28,6 +28,7 @@ Primary workflow commands:
 
 ```bash
 npm run agent:prepare -- "<youtube-url>"
+npm run agent:complete -- "<youtube-url>" --prepare-only
 npm run ci
 ```
 
@@ -48,9 +49,9 @@ artifacts/videos/<videoId>/
 `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 `transcript.md` is the raw fallback source.
 
-The reply language, summary filename, headings, ambiguity fallback, and validator rules are driven by `src/summary/outputLanguage.ts`.
+The reply language, summary filename, headings, ambiguity fallback, and validator rules are driven by **`src/summary/outputLanguage.ts`** presets, selected with **`YT_SUMMARY_LANG`** (e.g. `ru`, `en`) or **`--reply-lang`** on `agent:prepare` / `agent:check-summary` (CLI wins over env).
 
-Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.<replyLanguage>.md`.
+Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.<replyLanguage>.md` (pass `--reply-lang` if it does not match the default `ru`).
 
 ## Prompt Contract
 

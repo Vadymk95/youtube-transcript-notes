@@ -17,6 +17,7 @@ Options:
   --audio-format <ext>     Audio format passed to yt-dlp -x (default: m4a)
   --whisper-cmd <shell>    Override whisper command; use {{audio}} and {{outdir}}
   --keep-tmp               Keep temp work directory from runPipeline
+  --reply-lang <code>      Summary preset: ru | en (overrides YT_SUMMARY_LANG)
   -h, --help               Show help
 
 Output:
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
             'audio-format': { type: 'string', default: 'm4a' },
             'whisper-cmd': { type: 'string' },
             'keep-tmp': { type: 'boolean', default: false },
+            'reply-lang': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -60,6 +62,7 @@ async function main(): Promise<void> {
     const result = await prepareAgentWorkflow({
         url,
         artifactsDir: values['artifacts-dir'],
+        replyLanguage: values['reply-lang'],
         forceWhisper: values['force-whisper'],
         minSubtitleChars: minChars,
         audioFormat: values['audio-format'],

@@ -4,7 +4,7 @@
 
 **Model output language:** The assistant must answer **entirely in {{OUTPUT_LANGUAGE_NAME}}** (all sections, headings, and bullets in {{OUTPUT_LANGUAGE_NAME}}). Instructions below are in English so this file stays consistent with the rest of the repo documentation.
 
-**Want another language?** Edit `src/summary/outputLanguage.ts`. The prompt, validator, reply language code, and summary filename all derive from that single config. See also **Model output language** in the README.
+**Want another language?** Set **`YT_SUMMARY_LANG`** (e.g. `en`) or pass **`--reply-lang`** to `agent:prepare` / `agent:check-summary`. Built-in presets live in `SUMMARY_LANGUAGE_PRESETS` in `src/summary/outputLanguage.ts` (add more locales there). See **Model output language** in the README.
 
 ---
 

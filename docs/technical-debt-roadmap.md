@@ -44,6 +44,8 @@ These are assets, not debt. Protect them.
 - Clear separation of concerns across `pipeline`, `transcript`, `summary`, and `cli`
 - Open-source friendly README and centralized summary output language config
 - OSS contributor baseline: `LICENSE` (MIT), `CONTRIBUTING.md`, GitHub Actions CI (`.github/workflows/ci.yml`), issue templates, `docs/troubleshooting.md`
+- Runtime summary language: `YT_SUMMARY_LANG`, `--reply-lang`, presets `ru` / `en` in `src/summary/outputLanguage.ts`
+- Optional **`agent:complete`** loop: prepare + `YT_SUMMARY_CMD` + validation (`--prepare-only` without a model)
 
 ## Reliability handoff (YouTube 429, Whisper, description)
 
@@ -51,7 +53,8 @@ Real-world run: default multi-language subtitle fetch hit **HTTP 429**, then **W
 
 - **Prompt for another model / planner** (incident + roadmap alignment): [`docs/reliability-handoff-prompt.md`](./reliability-handoff-prompt.md)
 - **Implemented:** `fetchVideoInfo` uses `yt-dlp --dump-single-json` so the **video description** is available in `transcript.md` front matter (`description`) and in `manifest.json` as **`videoDescription`** (links and notes from the YouTube page).
-- **Still open (code / UX hardening):** sequential subtitle language attempts / retry on 429, clearer errors when Whisper is missing before expensive steps. Operational mitigations: `docs/troubleshooting.md`.
+- **Still open (code / UX hardening):** sequential subtitle language attempts / retry on 429, clearer errors when Whisper is missing **before** audio download. Operational mitigations: `docs/troubleshooting.md`.
+- **Priority:** same **P0** class as one-command UX below — without this, “URL → prepare” still fails opaque for chat/agent users.
 
 ## Competitive Reality
 
@@ -161,56 +164,29 @@ These are the most important current gaps relative to the market and the repo’
 
 These are the highest-value issues because users will feel them immediately.
 
-#### 1. No one-command final summary workflow
+#### 1. One-command UX is partial (local summarizer is still DIY)
 
 Current state:
 
-- `agent:prepare` is strong
-- final summary generation still depends on the agent loop
+- **`npm run agent:complete`** chains prepare → optional **`YT_SUMMARY_CMD`** / **`--summary-cmd`** → **`validateSummary`**, with **`--prepare-only`** when no model is configured
+- the summarizer is **user-provided shell** (local-first: no bundled cloud API)
 
-Why it matters:
+Remaining gap:
 
-- competitors feel simpler
-- external users want “one command in, useful summary out”
-
-Recommended direction:
-
-- add an optional command that performs:
-    - prepare
-    - summary draft generation
-    - validation
-    - retry or fail with actionable feedback
+- “Batteries included” summarization for users who will not wire `YT_SUMMARY_CMD`
+- smarter retry guidance (e.g. suggested env tweaks) beyond printing validator errors
+- one **README quick-reference** row/table: default transcript format (`md` / `txt`), `YT_TRANSCRIPT_SUB_LANGS`, `YT_SUMMARY_LANG` / `--reply-lang`, and “read `manifest.json` for context sizing” — so the golden path is not scattered across rules only
+- **Pipeline reliability** in lockstep with this: see **Reliability handoff** (429, Whisper preflight)
 
 Non-goal:
 
-- do not replace the canonical transcript-first workflow
-
-#### 2. Output language is centralized, but not runtime-configurable
-
-Current state:
-
-- language config is clean
-- but changing language still means editing `src/summary/outputLanguage.ts`
-
-Why it matters:
-
-- this is fine for maintainers
-- it is weak for users and open-source adoption
-
-Recommended direction:
-
-- move summary language selection to CLI/env/config input
-- preserve one default language config, but support named presets
-
-Acceptance signal:
-
-- user can switch output language without editing TypeScript source
+- do not replace the canonical transcript-first workflow or make a remote API the default
 
 ### P1: Quality and trust gaps
 
 These matter for long-term defensibility.
 
-#### 3. Transcript quality fixture corpus is too small
+#### 2. Transcript quality fixture corpus is too small
 
 Current state:
 
@@ -236,7 +212,7 @@ Acceptance signal:
 
 - at least a small but representative multilingual corpus with protected fixtures and real-world fixtures
 
-#### 4. No explicit benchmark against external alternatives
+#### 3. No explicit benchmark against external alternatives
 
 Current state:
 
@@ -265,7 +241,7 @@ Recommended direction:
 
 These may become important, but they are not the right first moves.
 
-#### 5. No batch mode
+#### 4. No batch mode
 
 Potential value:
 
@@ -284,7 +260,7 @@ Recommendation:
 
 - treat as post-v1 or power-user feature
 
-#### 6. No search / content-library workflow
+#### 5. No search / content-library workflow
 
 Potential value:
 
@@ -301,7 +277,7 @@ Recommendation:
 
 - only pursue after the single-video workflow is clearly strong and adopted
 
-#### 7. No UI or extension
+#### 6. No UI or extension
 
 Potential value:
 
@@ -383,13 +359,13 @@ Goals:
 
 Work items:
 
-1. Add runtime output language selection
-2. Add one-command summary generation flow
+1. Improve one-command UX (guided defaults, clearer failures) on top of `agent:complete`
+2. Harden subtitle path: mitigate **HTTP 429** (sequential langs / retry) and **Whisper missing** (early, actionable error before audio work)
 3. Add optional output modes beyond the strict handoff summary:
     - handoff
     - short summary
     - outline
-4. Improve README examples around common usage patterns
+4. Improve README examples around common usage patterns (including real `YT_SUMMARY_CMD` recipes) and the **defaults / env** quick reference above
 
 Why:
 
@@ -436,33 +412,32 @@ Guardrails:
 
 ## Priority Table
 
-| Item                       | Priority | Why now                     | Why not later                           |
-| -------------------------- | -------- | --------------------------- | --------------------------------------- |
-| Runtime language selection | P0       | Clear user pain             | Blocks multilingual adoption            |
-| One-command summary flow   | P0       | Biggest UX gap              | Strongest productization move           |
-| Expand fixture corpus      | P1       | Protects cleanup quality    | Needed before wider usage               |
-| External benchmark set     | P1       | Makes strategy measurable   | Prevents intuition-only decisions       |
-| Batch mode                 | P2       | Useful, but not core yet    | Can wait until single-video UX is solid |
-| Search / archive workflows | P2       | Promising adjacent category | Too early and too broad                 |
-| UI / extension             | P2       | Big adoption upside         | Too distracting right now               |
+| Item                        | Priority | Why now                                | Why not later                                 |
+| --------------------------- | -------- | -------------------------------------- | --------------------------------------------- |
+| One-command UX polish       | P0       | Biggest UX gap for lay users           | Core loop exists via `agent:complete`         |
+| Subtitle 429 + Whisper UX   | P0       | Same story as prepare; opaque failures | Blocks trust before summarization even starts |
+| README defaults / env table | P0       | Cuts setup archaeology                 | Easy win; agents and humans both benefit      |
+| Expand fixture corpus       | P1       | Protects cleanup quality               | Needed before wider usage                     |
+| External benchmark set      | P1       | Makes strategy measurable              | Prevents intuition-only decisions             |
+| Batch mode                  | P2       | Useful, but not core yet               | Can wait until single-video UX is solid       |
+| Search / archive workflows  | P2       | Promising adjacent category            | Too early and too broad                       |
+| UI / extension              | P2       | Big adoption upside                    | Too distracting right now                     |
 
 ## Definition Of “Good Next Version”
 
 The next strong milestone should satisfy all of the following:
 
 - a new user can install dependencies and understand the workflow quickly
-- a user can switch summary language without editing source code
-- a user can generate a validated summary with one primary command
+- a casual user can get a validated summary without hand-wiring shell (`YT_SUMMARY_CMD` today is power-user)
 - CI remains green and quality fixtures cover more than the current narrow set
 
 ## Final Recommendation
 
 If only a few things get built next, choose these:
 
-1. Runtime language selection
-2. One-command summary generation
-3. Expanded quality fixture corpus
-4. External benchmark set
+1. One-command UX polish (beyond `agent:complete` + `YT_SUMMARY_CMD`) **including** README defaults/env table and **subtitle 429 + Whisper preflight** (see Priority Table)
+2. Expanded quality fixture corpus
+3. External benchmark set
 
 Everything else should be judged against one question:
 

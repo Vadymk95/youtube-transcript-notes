@@ -41,11 +41,11 @@ The final summary must be validated before the workflow is considered complete.
 
 ## Important Commands
 
-Use the Node version from `.nvmrc` (load `nvm` in non-interactive shells if needed). Primary scripts: `agent:prepare`, `agent:check-summary`, and `ci` (see `package.json`).
+Use the Node version from `.nvmrc` (load `nvm` in non-interactive shells if needed). Primary scripts: `agent:prepare`, `agent:complete` (optional prepare + `YT_SUMMARY_CMD` + validate), `agent:check-summary`, and `ci` (see `package.json`).
 
 ## Constraints
 
 - Input scope for v1: YouTube URLs only
-- Final summary language: configurable in `src/summary/outputLanguage.ts` (Russian by default)
+- Final summary language: presets in `src/summary/outputLanguage.ts`, selected with **`YT_SUMMARY_LANG`** or **`--reply-lang`** (default `ru`; built-in `en`)
 - Transcript must come from the local pipeline, not from the title or guessed content
 - `prompts/video-notes-prompt.md` is the template authority for the summary structure

@@ -17,6 +17,7 @@ This repository already encodes a **small surface area, verify, keep-or-revert**
 | Keep / revert            | Ralph loop: rewrite summary until validator passes; `rollbackAgentArtifactFiles` on failed `agent:prepare` |
 | Fixture + metric harness | `npm run eval:transcript-quality` + `fixtures/transcript-quality/`                                         |
 | Full gate                | `npm run ci`                                                                                               |
+| Optional one-shot loop   | `npm run agent:complete` (prepare + `YT_SUMMARY_CMD` + validate, or `--prepare-only`)                      |
 
 Use **scout-style** discovery only when you explicitly need repo-wide debt ranking; the default path is still one video URL and one artifact bundle.
 

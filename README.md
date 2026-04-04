@@ -95,6 +95,15 @@ node dist/cli/transcriptCli.js "<url>" -o ./notes.md
 npm run agent:prepare -- "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
+**End-to-end with a local summarizer** (prepare → your command writes `summary.<lang>.md` → validate):
+
+```bash
+export YT_SUMMARY_CMD='cat "{{SUMMARY_PROMPT_PATH}}" | your-llm-cli > "{{SUMMARY_OUT_PATH}}"'
+npm run agent:complete -- "https://www.youtube.com/watch?v=VIDEO_ID" --reply-lang ru
+```
+
+Use `--prepare-only` if you only want transcripts + prompt (no `YT_SUMMARY_CMD`). Placeholders: `{{SUMMARY_PROMPT_PATH}}`, `{{SUMMARY_OUT_PATH}}`, `{{TRANSCRIPT_PATH}}`, `{{VIDEO_ID}}`, `{{MANIFEST_PATH}}`, `{{ARTIFACT_DIR}}`. The repo does **not** ship a default cloud model; you wire the shell (Ollama, local CLI, etc.). Optional `--attempts 2` retries the command when validation fails (non-deterministic models).
+
 This command writes a stable artifact bundle for the agent:
 
 - `artifacts/videos/<videoId>/transcript.md`
@@ -124,6 +133,8 @@ Useful flags: `--format txt`, `--force-whisper`, `--min-chars <n>`, `--audio-for
 
 Environment:
 
+- `YT_SUMMARY_LANG` — summary output preset: `ru` (default) or `en`. Overridden by `--reply-lang` on `agent:prepare` / `agent:check-summary` / `agent:complete`.
+- `YT_SUMMARY_CMD` — optional shell template for `agent:complete` (see **Agent workflow** above). Overridden by `--summary-cmd` for that run.
 - `YT_TRANSCRIPT_SUB_LANGS` — comma-separated `--sub-langs` for yt-dlp manual/auto captions (default: `en,en-US,en-orig,ru,uk,-live_chat`). Avoid `all` unless you accept many requests and possible HTTP 429 from YouTube. Upgrading from **1.0.x**: if you relied on every language being fetched, set this explicitly (e.g. `all,-live_chat`).
 - `YT_TRANSCRIPT_WHISPER_CMD` — default Whisper shell template
 - `YT_TRANSCRIPT_DEBUG` — log yt-dlp subtitle attempt failures to stderr (prefixed with `[yt-transcript]`)
@@ -137,41 +148,26 @@ Environment:
 
 ### Model output language
 
-The summary output defaults to **Russian**.
+The summary output defaults to **Russian** (`ru`).
 
-To switch the whole workflow to another language, edit only:
+**Without editing TypeScript** you can use English summaries:
 
-```text
-src/summary/outputLanguage.ts
+```bash
+YT_SUMMARY_LANG=en npm run agent:prepare -- "<youtube-url>"
+# or
+npm run agent:prepare -- "<youtube-url>" --reply-lang en
+npm run agent:check-summary -- "artifacts/videos/<videoId>/summary.en.md" --reply-lang en
 ```
 
-That single config controls:
+Built-in presets: **`ru`**, **`en`** (see `SUMMARY_LANGUAGE_PRESETS` in `src/summary/outputLanguage.ts`). Unknown codes fail fast with a clear error.
 
-- the reply language code in `manifest.json`
-- the summary artifact filename (`summary.<code>.md`)
-- the exact required headings and subheadings
-- the validator rules
-- the prompt language placeholders
-- the ambiguity fallback string and speculative markers
+Override order: **`--reply-lang`** on the CLI, then **`YT_SUMMARY_LANG`**, then default `ru`.
 
-Typical fields you will change:
-
-- `code` — e.g. `ru` -> `es`
-- `englishName` — e.g. `Russian` -> `Spanish`
-- `requiredHeadings`
-- `requiredHandoffSubheadings`
-- `ambiguityFallback`
-- `speculativeMarkers`
-- `contentScriptRegex` / `contentScriptLabel`
-
-After changing the config, rerun:
+To add a **new** language, extend `src/summary/outputLanguage.ts` (headings, ambiguity fallback, speculative markers, script check regex). Then rerun:
 
 ```bash
 npm run ci
-npm run agent:prepare -- "<youtube-url>"
 ```
-
-The new artifact will be written as `summary.<your-code>.md`.
 
 ## Development
 
@@ -179,6 +175,7 @@ The new artifact will be written as `summary.<your-code>.md`.
 npm run test        # unit tests (Vitest)
 npm run test:watch
 npm run agent:check-summary -- "<summary-file>"
+npm run agent:complete -- "<youtube-url>" --prepare-only
 npm run eval:transcript-quality
 npm run ci          # format:check, lint (0 warnings), typecheck, test, build, eval:transcript-quality
 npm run verify      # same as ci

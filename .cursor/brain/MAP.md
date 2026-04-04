@@ -4,7 +4,7 @@
 
 ### Agent summary flow
 
-The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkflowCli`, which calls `prepareAgentWorkflow()` and `runPipeline()` to produce subtitles or Whisper fallback, then assembles artifacts. The chat step reads `manifest.json` and `summary-prompt.md`, writes `summary.<replyLanguage>.md` (default: `summary.ru.md`), runs `agent:check-summary` until validation passes, and answers in the configured reply language. Implementation spine: `src/cli/agentWorkflowCli.ts` and `src/summary/agentWorkflow.ts`; validation: `src/cli/summaryValidatorCli.ts` with rules in `src/summary/summaryContract.ts` and `src/summary/outputLanguage.ts`.
+The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkflowCli`, which calls `prepareAgentWorkflow()` and `runPipeline()` to produce subtitles or Whisper fallback, then assembles artifacts. Optionally **`agent:complete`** (`agentCompleteCli`) runs prepare, a user-defined **`YT_SUMMARY_CMD`** shell, and `validateSummary`. The chat step reads `manifest.json` and `summary-prompt.md`, writes `summary.<replyLanguage>.md` (default: `summary.ru.md`), runs `agent:check-summary` until validation passes, and answers in the configured reply language. Implementation spine: `src/cli/agentWorkflowCli.ts`, `src/cli/agentCompleteCli.ts`, `src/summary/agentWorkflow.ts`, `src/summary/agentCompleteFlow.ts`; validation: `src/cli/summaryValidatorCli.ts` with rules in `src/summary/summaryContract.ts` and `src/summary/outputLanguage.ts`.
 
 ### Transcript generation flow
 
@@ -24,9 +24,11 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 - `LICENSE`, `CONTRIBUTING.md`, `docs/troubleshooting.md` — OSS contributor baseline (see roadmap “What Is Already Strong”)
 - `.github/workflows/ci.yml` — GitHub Actions running `npm run ci`
 - `.github/ISSUE_TEMPLATE/` — bug report templates (transcript extraction, caption quality, summary validation)
-- `src/cli/` — `transcriptCli` (standalone URL → transcript file; npm `dev` / packaged `yt-transcript`); `agentWorkflowCli`, `summaryValidatorCli`, `transcriptQualityCli` for prepare bundle, summary validation, and caption-quality eval
+- `src/cli/` — `transcriptCli` (standalone URL → transcript file; npm `dev` / packaged `yt-transcript`); `agentWorkflowCli`, `agentCompleteCli`, `summaryValidatorCli`, `transcriptQualityCli` for prepare bundle, optional full loop, summary validation, and caption-quality eval
 - `src/summary/agentWorkflow.ts` — artifact paths, prompt assembly, rollback of partial prepare outputs (not the user-owned summary file)
-- `src/summary/outputLanguage.ts` — single source of truth for reply language code, headings, summary filename, ambiguity fallback, and prompt placeholders
+- `src/summary/agentCompleteFlow.ts` — orchestrates prepare + `YT_SUMMARY_CMD` + validation (`runAgentComplete`)
+- `src/summary/summaryCommand.ts` — interpolates summary shell placeholders; runs `sh -c` (same risk class as `YT_TRANSCRIPT_WHISPER_CMD`)
+- `src/summary/outputLanguage.ts` — preset map (`SUMMARY_LANGUAGE_PRESETS`), `resolveSummaryOutputLanguage()` from `YT_SUMMARY_LANG` / CLI override; headings, summary filename, ambiguity fallback, prompt placeholders
 - `src/summary/summaryContract.ts` — summary shape and validation rules derived from the configured output language
 - `src/summary/transcriptMetrics.ts` — transcript file and body character counts for `manifest.json` context budgeting
 - `src/pipeline/pipeline.ts` — subtitle and Whisper orchestration

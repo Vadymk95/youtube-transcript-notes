@@ -1,5 +1,25 @@
 # Architectural Decisions
 
+## [2026-04] `agent:complete` uses user shell for summarization
+
+**Decision**: **`npm run agent:complete`** runs **`prepareAgentWorkflow`**, then **`YT_SUMMARY_CMD`** (or **`--summary-cmd`**) via `sh -c` with path placeholders, then **`validateSummary`**. **`--prepare-only`** skips the shell and is the default CI-friendly path. No cloud API is bundled.
+
+**Why**: Roadmap “one command” without breaking local-first policy; mirrors the existing Whisper command pattern.
+
+**Trade-off**: Users must supply a working local CLI; malformed commands and shell injection risk are the operator’s responsibility, same as `YT_TRANSCRIPT_WHISPER_CMD`.
+
+---
+
+## [2026-04] Runtime summary language via env and CLI
+
+**Decision**: Active output preset is **`resolveSummaryOutputLanguage(override)`** with precedence: `prepareAgentWorkflow({ replyLanguage })` or CLI `--reply-lang`, then **`YT_SUMMARY_LANG`**, then default **`ru`**. Built-in presets live in **`SUMMARY_LANGUAGE_PRESETS`** (`ru`, `en`). Validator accepts the same override so headings match the written summary.
+
+**Why**: Roadmap P0 asked for language selection without editing TypeScript for end users; maintainers still add locales by extending the preset map.
+
+**Trade-off**: New languages require a code change (or a future file-based loader); script detection uses a simple regex per preset (Cyrillic vs Latin), not full locale detection.
+
+---
+
 ## [2026-04] MIT license for OSS readiness
 
 **Decision**: Ship the project under the **MIT License** (`LICENSE` at repo root, `license` field in `package.json`).

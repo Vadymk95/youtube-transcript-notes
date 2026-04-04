@@ -6,8 +6,9 @@ import { runPipeline } from '@/pipeline/pipeline';
 import { DEFAULT_WHISPER_CMD } from '@/pipeline/whisperFallback';
 import { fetchVideoInfo } from '@/pipeline/ytDlp';
 import {
-    DEFAULT_REPLY_LANGUAGE,
+    type SummaryOutputLanguageConfig,
     promptTemplateVariables,
+    resolveSummaryOutputLanguage,
     summaryFileName
 } from '@/summary/outputLanguage';
 import { computeTranscriptCharMetrics } from '@/summary/transcriptMetrics';
@@ -22,6 +23,8 @@ const PROMPT_TEMPLATE_PATH = fileURLToPath(
 export type AgentWorkflowOptions = {
     url: string;
     artifactsDir?: string;
+    /** ISO-style preset code, e.g. `ru`, `en`. Overrides `YT_SUMMARY_LANG`. */
+    replyLanguage?: string;
     forceWhisper?: boolean;
     minSubtitleChars?: number;
     audioFormat?: string;
@@ -54,7 +57,7 @@ export type AgentWorkflowManifest = {
     transcriptPath: string;
     summaryPromptPath: string;
     summaryPath: string;
-    replyLanguage: typeof DEFAULT_REPLY_LANGUAGE;
+    replyLanguage: string;
 };
 
 export type AgentWorkflowResult = AgentWorkflowManifest &
@@ -62,14 +65,18 @@ export type AgentWorkflowResult = AgentWorkflowManifest &
         workDir?: string;
     };
 
-export function assembleSummaryPrompt(template: string, transcript: string): string {
+export function assembleSummaryPrompt(
+    template: string,
+    transcript: string,
+    lang?: SummaryOutputLanguageConfig
+): string {
     const promptBlock = template.includes('\n---\n')
         ? template.split('\n---\n').slice(1).join('\n---\n').trimStart()
         : template;
     if (!promptBlock.includes('{{TRANSCRIPT}}')) {
         throw new Error('Prompt template must contain {{TRANSCRIPT}} placeholder');
     }
-    const variables = promptTemplateVariables(transcript);
+    const variables = promptTemplateVariables(transcript, lang);
     let rendered = promptBlock;
     for (const [key, value] of Object.entries(variables)) {
         rendered = rendered.replaceAll(`{{${key}}}`, value);
@@ -99,13 +106,17 @@ export async function rollbackAgentArtifactFiles(paths: readonly string[]): Prom
     }
 }
 
-function resolveArtifactPaths(artifactsDir: string, videoId: string): AgentArtifactPaths {
+function resolveArtifactPaths(
+    artifactsDir: string,
+    videoId: string,
+    lang: SummaryOutputLanguageConfig
+): AgentArtifactPaths {
     const artifactDir = path.join(artifactsDir, videoId);
     return {
         artifactDir,
         transcriptPath: path.join(artifactDir, 'transcript.md'),
         summaryPromptPath: path.join(artifactDir, 'summary-prompt.md'),
-        summaryPath: path.join(artifactDir, summaryFileName()),
+        summaryPath: path.join(artifactDir, summaryFileName(lang)),
         manifestPath: path.join(artifactDir, 'manifest.json')
     };
 }
@@ -114,8 +125,9 @@ export async function prepareAgentWorkflow(
     options: AgentWorkflowOptions
 ): Promise<AgentWorkflowResult> {
     const videoInfo = await fetchVideoInfo(options.url);
+    const lang = resolveSummaryOutputLanguage(options.replyLanguage);
     const artifactsDir = path.resolve(process.cwd(), options.artifactsDir ?? DEFAULT_ARTIFACTS_DIR);
-    const artifactPaths = resolveArtifactPaths(artifactsDir, videoInfo.id);
+    const artifactPaths = resolveArtifactPaths(artifactsDir, videoInfo.id, lang);
 
     await mkdir(artifactPaths.artifactDir, { recursive: true });
 
@@ -141,7 +153,7 @@ export async function prepareAgentWorkflow(
             readFile(artifactPaths.transcriptPath, 'utf8')
         ]);
         const charMetrics = computeTranscriptCharMetrics(transcript);
-        const prompt = assembleSummaryPrompt(template, transcript);
+        const prompt = assembleSummaryPrompt(template, transcript, lang);
         await writeFile(artifactPaths.summaryPromptPath, prompt, 'utf8');
         writtenArtifactPaths.push(artifactPaths.summaryPromptPath);
 
@@ -159,7 +171,7 @@ export async function prepareAgentWorkflow(
             transcriptPath: artifactPaths.transcriptPath,
             summaryPromptPath: artifactPaths.summaryPromptPath,
             summaryPath: artifactPaths.summaryPath,
-            replyLanguage: DEFAULT_REPLY_LANGUAGE
+            replyLanguage: lang.code
         };
         await writeFile(
             artifactPaths.manifestPath,

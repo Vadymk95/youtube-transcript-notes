@@ -9,6 +9,7 @@
     },
     "scripts": {
         "agent:check-summary": "tsx src/cli/summaryValidatorCli.ts",
+        "agent:complete": "tsx src/cli/agentCompleteCli.ts",
         "agent:prepare": "tsx src/cli/agentWorkflowCli.ts",
         "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
         "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run eval:transcript-quality",

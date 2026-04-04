@@ -3,10 +3,11 @@
 ## Technical Risks
 
 - Prompt template contract: `src/summary/agentWorkflow.ts` depends on `prompts/video-notes-prompt.md` containing a `---` separator and `{{TRANSCRIPT}}`. If the template shape changes, prompt assembly can silently break.
-- Summary contract drift: `src/summary/summaryContract.ts` assumes exact headings and subheadings from `src/summary/outputLanguage.ts`. If the prompt format changes without updating that config and the validator, the Ralph loop will fail.
+- Summary contract drift: `src/summary/summaryContract.ts` validates against the active preset from `resolveSummaryOutputLanguage()` (or `--reply-lang`). Headings must match that preset and `prompts/video-notes-prompt.md` assembly. If the prompt format changes without updating presets and the validator, the Ralph loop will fail.
 - External toolchain: the real runtime depends on `yt-dlp`, `ffmpeg`, and optionally Whisper. Missing binaries are the most likely production failure mode.
 - YouTube subtitle fetch: using `all` languages in `--sub-langs` can trigger HTTP 429. The default is a short list; widen with `YT_TRANSCRIPT_SUB_LANGS` only when needed.
 - Whisper shell execution: `runWhisperToVtt()` executes a shell string from `YT_TRANSCRIPT_WHISPER_CMD` or `--whisper-cmd`. Do not casually change interpolation or quoting rules.
+- Summary command shell: `runSummaryShellCommand()` executes `YT_SUMMARY_CMD` / `--summary-cmd` like Whisper; untrusted templates are unsafe.
 - Artifact contract drift: the agent flow assumes `manifest.json -> summary-prompt.md -> summary.<replyLanguage>.md -> validator`. Renaming files or changing manifest fields (including `videoDescription`) without updating the rules breaks the chat workflow.
 - Agent prepare rollback: if `prepareAgentWorkflow()` fails after `runPipeline` writes `transcript.md`, it deletes `transcript.md`, `summary-prompt.md`, and `manifest.json` produced in that run (in reverse order). It does not delete the final summary file (user-owned). If an `unlink` during rollback fails, failures are logged with `console.warn` and the original error is still rethrown upstream.
 
