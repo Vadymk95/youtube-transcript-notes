@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1 — 2026-04-04
+
+### Changed
+
+- Summary prompt and injected `REQUIRED_OUTPUT_FORMAT`: BLUF-first topic, clearer outline vs main-ideas roles, reading-order hint for humans, and speculative-language rules aligned with the validator (ambiguity section + handoff risks only).
+- CLI `--help` for `agent:prepare` and `agent:check-summary` now shows correct packaged paths under `dist/cli/`.
+
 ## 1.4.0 — 2026-04-03
 
 ### Added

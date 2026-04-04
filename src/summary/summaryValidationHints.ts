@@ -38,7 +38,7 @@ function linesForErrors(errors: string[]): string[] {
     }
     if (joined.includes('Speculative wording')) {
         out.push(
-            'Ambiguity / hedging phrases belong only in the gaps and handoff-risk sections for this preset; rewrite factual parts without those markers.'
+            'Hedging belongs only in the final ambiguity section and the handoff risks subheading (exact titles: `requiredHeadings` / `requiredHandoffSubheadings` in `src/summary/outputLanguage.ts` for your reply language); keep other sections literal.'
         );
     }
 

@@ -33,4 +33,14 @@ describe('formatSummaryValidationHints', () => {
         expect(text).toContain('Fix YT_SUMMARY_LANG');
         expect(text).not.toMatch(/Preset in use: xx/);
     });
+
+    it('adds hedging-location hint when speculative wording error present', () => {
+        const text = formatSummaryValidationHints({
+            errors: ['Speculative wording is only allowed in ambiguity/risk sections: вероятно'],
+            replyLanguage: 'ru',
+            summaryPath: '/tmp/summary.ru.md'
+        });
+        expect(text).toContain('final ambiguity section');
+        expect(text).toContain('outputLanguage.ts');
+    });
 });

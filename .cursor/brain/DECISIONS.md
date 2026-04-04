@@ -70,6 +70,26 @@
 
 ---
 
+## [2026-04] Summary template authority vs machine checks
+
+**Decision**: Human/model instructions for the final markdown live in **`prompts/video-notes-prompt.md`** plus the injected block from **`renderPromptRequiredOutputFormat()`** (`src/summary/outputLanguage.ts`). The **Ralph gate** is **`validateSummary()`** in **`src/summary/summaryContract.ts`**: exact `requiredHeadings` and `requiredHandoffSubheadings`, script heuristic (Cyrillic vs Latin), non-empty topic (min length), numbered outline section, bulleted main ideas, no `{{TRANSCRIPT}}`, speculative markers only inside gaps and risks bodies.
+
+**Why**: The prompt can ask for richer behavior (e.g. 5–12 outline points); the validator enforces a **minimal structural contract** so `agent:check-summary` stays predictable and fast.
+
+**Trade-off**: A summary can pass validation but still be a weak handoff; quality remains transcript + model + iteration, while the validator prevents broken structure.
+
+---
+
+## [2026-04] Prompt-level BLUF and outline/ideas split
+
+**Decision**: The injected `REQUIRED_OUTPUT_FORMAT` and `video-notes-prompt.md` instruct a **BLUF-first** topic paragraph, a **chronological numbered outline**, **synthetic bullet ideas** (non-duplicative of the outline), explicit **reading-order** guidance for humans, and speculative markers **only** in the gaps section and handoff **risks** subsection—matching `validateSummary()`.
+
+**Why**: Reduces skim time and Ralph failures from contradictory “ambiguity section only” wording while keeping the same validated headings.
+
+**Trade-off**: Stronger instructions may slightly increase model adherence variance; the validator still enforces only structure, not prose quality.
+
+---
+
 ## [2026-04] Russian is the default reply language
 
 **Decision**: The project-level default summary output is Russian.

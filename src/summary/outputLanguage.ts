@@ -118,19 +118,19 @@ export function renderPromptRequiredOutputFormat(lang?: SummaryOutputLanguageCon
     return [
         topic,
         '',
-        'Write 1–3 sentences about the topic, implied audience, and context if stated.',
+        'Write **1–3 sentences**. **Lead with the main takeaway (BLUF)** in the **first sentence** when the transcript supports a clear conclusion; then add topic, implied audience, and context **only if stated**.',
         '',
         outline,
         '',
-        'Write a numbered list of **5–12** points in video order.',
+        'Numbered list of **5–12** points in **strict chronological (video) order**. One discrete beat per line; keep each line concise.',
         '',
         ideas,
         '',
-        'Write a bullet list of **3–7** takeaways.',
+        'Bullet list of **3–7** **synthetic** takeaways (patterns, claims, conclusions). **Do not** repeat the outline verbatim—compress and generalize where the transcript allows.',
         '',
         handoff,
         '',
-        'Use these exact subheadings:',
+        'Dense, machine-friendly material for the next agent. Use these exact subheadings:',
         '',
         facts,
         '',
@@ -146,11 +146,11 @@ export function renderPromptRequiredOutputFormat(lang?: SummaryOutputLanguageCon
         '',
         risks,
         '',
-        'List risks, caveats, or controversial points if the speaker raises them.',
+        'List risks, caveats, or controversial points if the speaker raises them. Preset speculative/hedging phrases are **allowed here**.',
         '',
         gaps,
         '',
-        'State what is cut off, contradictory, or needs checking against a primary source.'
+        'State what is cut off, contradictory, or needs checking against a primary source. Preset speculative/hedging phrases are **allowed here**.'
     ].join('\n');
 }
 

@@ -4,37 +4,7 @@ import { validateSummary } from '@/summary/summaryContract';
 
 describe('validateSummary', () => {
     it('accepts a well-formed Russian summary', () => {
-        const summary = `## О чем видео
-Это короткое видео, где автор стоит перед слонами в зоопарке и описывает, что у них очень длинные хоботы.
-
-## Краткий план
-1. Автор показывает место действия.
-2. Указывает на слонов.
-3. Отмечает длинные хоботы.
-4. Коротко завершает рассказ.
-
-## Главные идеи
-- Видео очень короткое и наблюдательное.
-- Основной объект внимания — слоны.
-
-## Важно для следующего агента
-### Факты, числа, имена
-- Упомянуты слоны и зоопарк.
-
-### Термины и определения
-- Новых терминов нет.
-
-### Практические шаги
-- Практических рекомендаций нет.
-
-### Риски и оговорки
-- Транскрипт очень короткий, поэтому выводы ограничены.
-
-## Пробелы и неоднозначности
-В тексте нет дополнительного контекста, поэтому многое остается неуточненным.
-`;
-
-        expect(validateSummary(summary)).toEqual({
+        expect(validateSummary(minimalValidRussianSummary())).toEqual({
             valid: true,
             errors: []
         });
@@ -173,4 +143,121 @@ Not stated in the transcript why the video was shot.
             }
         }
     });
+
+    it('rejects leftover transcript placeholder', () => {
+        const summary = minimalValidRussianSummary().replace(
+            '## О чем видео',
+            '## О чем видео\n{{TRANSCRIPT}}'
+        );
+        const result = validateSummary(summary);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('Summary still contains the transcript placeholder');
+    });
+
+    it('rejects short outline without a numbered list', () => {
+        const summary = minimalValidRussianSummary().replace(
+            `## Краткий план
+1. Автор показывает место действия.
+2. Указывает на слонов.
+3. Отмечает длинные хоботы.
+4. Коротко завершает рассказ.`,
+            `## Краткий план
+- Первый пункт без нумерации.
+- Второй пункт.`
+        );
+        const result = validateSummary(summary);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('Short outline must contain a numbered list');
+    });
+
+    it('rejects main ideas without bullet lines', () => {
+        const summary = minimalValidRussianSummary().replace(
+            `## Главные идеи
+- Видео очень короткое и наблюдательное.
+- Основной объект внимания — слоны.`,
+            `## Главные идеи
+1. Нумерованный список вместо маркеров.
+2. Второй пункт.`
+        );
+        const result = validateSummary(summary);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('Main ideas must contain bullet points');
+    });
+
+    it('rejects a topic section that is too short', () => {
+        const summary = minimalValidRussianSummary().replace(
+            /## О чем видео\n[\s\S]*?(?=\n## Краткий план)/,
+            '## О чем видео\nКоротко.\n'
+        );
+        const result = validateSummary(summary);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('The video topic section is too short');
+    });
+
+    it('allows speculative wording in gaps and in risks subheading', () => {
+        const summary = `## О чем видео
+Это короткое видео, где автор стоит перед слонами в зоопарке и описывает, что у них очень длинные хоботы.
+
+## Краткий план
+1. Автор показывает место действия.
+2. Указывает на слонов.
+3. Отмечает длинные хоботы.
+4. Коротко завершает рассказ.
+
+## Главные идеи
+- Видео очень короткое и наблюдательное.
+- Основной объект внимания — слоны.
+
+## Важно для следующего агента
+### Факты, числа, имена
+- Упомянуты слоны и зоопарк.
+
+### Термины и определения
+- Новых терминов нет.
+
+### Практические шаги
+- Практических рекомендаций нет.
+
+### Риски и оговорки
+- Вероятно, выводы ограничены коротким транскриптом.
+
+## Пробелы и неоднозначности
+Похоже, в тексте нет дополнительного контекста, поэтому многое остается неуточненным.
+`;
+
+        expect(validateSummary(summary)).toEqual({ valid: true, errors: [] });
+    });
 });
+
+/** Minimal valid Russian summary shared by backtests. */
+function minimalValidRussianSummary(): string {
+    return `## О чем видео
+Это короткое видео, где автор стоит перед слонами в зоопарке и описывает, что у них очень длинные хоботы.
+
+## Краткий план
+1. Автор показывает место действия.
+2. Указывает на слонов.
+3. Отмечает длинные хоботы.
+4. Коротко завершает рассказ.
+
+## Главные идеи
+- Видео очень короткое и наблюдательное.
+- Основной объект внимания — слоны.
+
+## Важно для следующего агента
+### Факты, числа, имена
+- Упомянуты слоны и зоопарк.
+
+### Термины и определения
+- Новых терминов нет.
+
+### Практические шаги
+- Практических рекомендаций нет.
+
+### Риски и оговорки
+- Транскрипт очень короткий, поэтому выводы ограничены.
+
+## Пробелы и неоднозначности
+В тексте нет дополнительного контекста, поэтому многое остается неуточненным.
+`;
+}

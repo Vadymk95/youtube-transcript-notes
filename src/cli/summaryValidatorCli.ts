@@ -12,7 +12,7 @@ function printHelp(): void {
 
 Usage:
   npm run agent:check-summary -- <summary-file> [--reply-lang <code>]
-  node dist/summaryValidatorCli.js <summary-file>
+  node dist/cli/summaryValidatorCli.js <summary-file>
 
 Options:
   --reply-lang <code>   Preset: ru | en (overrides YT_SUMMARY_LANG; must match how the summary was written)

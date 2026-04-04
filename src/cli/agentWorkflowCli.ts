@@ -8,7 +8,7 @@ function printHelp(): void {
 
 Usage:
   npm run agent:prepare -- <url> [options]
-  node dist/agentCli.js <url> [options]
+  node dist/cli/agentWorkflowCli.js <url> [options]
 
 Options:
   --artifacts-dir <dir>    Artifact root (default: ./artifacts/videos)

@@ -4,6 +4,7 @@ import {
     DEFAULT_REPLY_LANGUAGE_CODE,
     SUMMARY_LANGUAGE_PRESETS,
     listSummaryLanguageCodes,
+    renderPromptRequiredOutputFormat,
     resolveSummaryOutputLanguage,
     summaryFileName
 } from '@/summary/outputLanguage';
@@ -44,5 +45,26 @@ describe('resolveSummaryOutputLanguage', () => {
 
     it('summaryFileName uses preset', () => {
         expect(summaryFileName(SUMMARY_LANGUAGE_PRESETS.en)).toBe('summary.en.md');
+    });
+});
+
+describe('renderPromptRequiredOutputFormat', () => {
+    it('includes every required heading and handoff subheading for each preset', () => {
+        for (const preset of Object.values(SUMMARY_LANGUAGE_PRESETS)) {
+            const block = renderPromptRequiredOutputFormat(preset);
+            for (const heading of preset.requiredHeadings) {
+                expect(block).toContain(heading);
+            }
+            for (const sub of preset.requiredHandoffSubheadings) {
+                expect(block).toContain(sub);
+            }
+        }
+    });
+
+    it('embeds BLUF, chronological outline, and hedging rules in the instruction lines', () => {
+        const block = renderPromptRequiredOutputFormat(SUMMARY_LANGUAGE_PRESETS.ru);
+        expect(block).toContain('BLUF');
+        expect(block).toContain('strict chronological (video) order');
+        expect(block).toContain('Preset speculative/hedging phrases are **allowed here**');
     });
 });

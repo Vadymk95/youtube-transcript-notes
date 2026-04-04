@@ -16,7 +16,7 @@ You receive the **full video transcript** (segment timestamps optional; spoken l
 {{TRANSCRIPT}}
 ```
 
-**Task:** Produce material for **another model** so it can skip reading dozens of pages and still get the gist and anchor facts.
+**Task:** Produce material for **another model** so it can skip reading dozens of pages and still get the gist and anchor facts. **Human readers** may skim the **bullet takeaways** section first; use the **numbered outline** section when strict chronological order matters.
 
 **Language requirement:** Write your **complete** response in **{{OUTPUT_LANGUAGE_NAME}}** only. Use the **exact headings below** so the result can be validated automatically.
 
@@ -24,13 +24,15 @@ Required output format:
 
 {{REQUIRED_OUTPUT_FORMAT}}
 
+**Reading order (guidance):** Topic (BLUF + framing) → numbered outline (timeline) → bullet ideas (synthesis) → handoff subsections (facts and operational hooks) → final section (what is unknown or shaky).
+
 **Constraints:**
 
 - Do not invent content absent from the transcript.
 - Do not add historical context, speaker intent, audience assumptions, emotions, motives, or significance unless they are explicit in the transcript.
 - Translation and summarization may rephrase the original wording, but they must not introduce new facts.
-- If something is not explicitly stated, write `{{AMBIGUITY_FALLBACK}}` or place the uncertainty in the ambiguity section.
-- Avoid speculative phrases such as {{SPECULATIVE_MARKERS}}, unless you are explicitly flagging ambiguity in the ambiguity section.
+- If something is not explicitly stated, write `{{AMBIGUITY_FALLBACK}}` or place the uncertainty in the **gaps** section (or the handoff **risks** subsection when it is uncertainty about claims or limits).
+- Avoid speculative phrases such as {{SPECULATIVE_MARKERS}}, except in the **gaps** section or the handoff **risks** subsection, where hedging belongs.
 - Avoid long verbatim quotes; short accurate snippets are fine when they carry the core meaning.
 - If the transcript is very short or incoherent, state the limits of what can be concluded.
 

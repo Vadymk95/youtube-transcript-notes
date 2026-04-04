@@ -22,6 +22,8 @@ From `agent-autoresearch`:
 python3 scripts/scout_repo.py --target-repo ../youtube-transcript-notes --strategy scored --write-runtime
 ```
 
+If the candidate list is dominated by **`node_modules`**, configure the scout to ignore dependency trees (see **agent-autoresearch** README or flags) or run from a clean target checkout—otherwise ranked items are noise.
+
 Read `agent-autoresearch/runtime/CANDIDATE_LIST.md`. To turn the top item into a formal task:
 
 ```bash
