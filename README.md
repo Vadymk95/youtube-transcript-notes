@@ -116,6 +116,10 @@ npm run agent:complete -- "https://www.youtube.com/watch?v=VIDEO_ID" --reply-lan
 
 Use `--prepare-only` if you only want transcripts + prompt (no `YT_SUMMARY_CMD`). Placeholders: `{{SUMMARY_PROMPT_PATH}}`, `{{SUMMARY_OUT_PATH}}`, `{{TRANSCRIPT_PATH}}`, `{{VIDEO_ID}}`, `{{MANIFEST_PATH}}`, `{{ARTIFACT_DIR}}`. The repo does **not** ship a default cloud model; you wire the shell (Ollama, local CLI, etc.). Optional `--attempts 2` retries the command when validation fails (non-deterministic models).
 
+**`YT_SUMMARY_CMD` recipe shapes** (adapt names/flags to your tool): pipe prompt into any stdin CLI → `cat "{{SUMMARY_PROMPT_PATH}}" | your-cli > "{{SUMMARY_OUT_PATH}}"`; file arguments → `your-cli -i "{{SUMMARY_PROMPT_PATH}}" -o "{{SUMMARY_OUT_PATH}}"`; run a small script → `node ./scripts/summarize.mjs "{{SUMMARY_PROMPT_PATH}}" "{{SUMMARY_OUT_PATH}}"`. On failure, `agent:complete` and `agent:check-summary` print **hint blocks** on stderr after the JSON (preset, re-check command, links to the prompt template).
+
+Validation writes machine-readable JSON to **stdout**; human hints go to **stderr** so scripts can keep parsing stdout.
+
 This command writes a stable artifact bundle for the agent:
 
 - `artifacts/videos/<videoId>/transcript.md`

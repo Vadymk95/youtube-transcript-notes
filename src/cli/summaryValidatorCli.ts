@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { resolveSummaryOutputLanguage } from '@/summary/outputLanguage';
 import { validateSummary, type SummaryValidationResult } from '@/summary/summaryContract';
+import { formatSummaryValidationHints } from '@/summary/summaryValidationHints';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes summary validator
@@ -17,6 +19,7 @@ Options:
 
 Output:
   Always prints one JSON object to stdout (including invalid --reply-lang / YT_SUMMARY_LANG), then exits 0 on success and 1 on failure.
+  On failure, also prints a short hint block to stderr (next-step commands; stdout stays JSON-only for scripts).
 `);
 }
 
@@ -63,6 +66,26 @@ async function main(): Promise<void> {
             2
         )
     );
+
+    if (!result.valid) {
+        try {
+            const lang = resolveSummaryOutputLanguage(values['reply-lang']).code;
+            console.error(
+                formatSummaryValidationHints({
+                    errors: result.errors,
+                    replyLanguage: lang,
+                    summaryPath: absolutePath
+                })
+            );
+        } catch {
+            console.error(
+                formatSummaryValidationHints({
+                    errors: result.errors,
+                    summaryPath: absolutePath
+                })
+            );
+        }
+    }
 
     process.exit(result.valid ? 0 : 1);
 }

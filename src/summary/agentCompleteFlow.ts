@@ -14,18 +14,21 @@ export class SummaryValidationFailedError extends Error {
     readonly validation: SummaryValidationResult;
     readonly summaryPath: string;
     readonly attempts: number;
+    readonly replyLanguage: string;
 
     constructor(
         message: string,
         validation: SummaryValidationResult,
         summaryPath: string,
-        attempts: number
+        attempts: number,
+        replyLanguage: string
     ) {
         super(message);
         this.name = 'SummaryValidationFailedError';
         this.validation = validation;
         this.summaryPath = summaryPath;
         this.attempts = attempts;
+        this.replyLanguage = replyLanguage;
     }
 }
 
@@ -129,6 +132,7 @@ export async function runAgentComplete(
         `Summary validation failed after ${maxAttempts} attempt(s). Fix your ${ENV_SUMMARY_CMD} or edit ${workflow.summaryPath} manually, then run agent:check-summary.`,
         lastValidation,
         workflow.summaryPath,
-        maxAttempts
+        maxAttempts,
+        workflow.replyLanguage
     );
 }

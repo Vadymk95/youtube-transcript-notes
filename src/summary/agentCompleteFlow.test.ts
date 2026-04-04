@@ -140,13 +140,19 @@ describe('runAgentComplete', () => {
             await writeFile(summaryPath, '# broken\n', 'utf8');
         });
 
-        await expect(
-            runAgentComplete({
+        let err: unknown;
+        try {
+            await runAgentComplete({
                 workflow: { url: 'https://youtube.com/watch?v=x', replyLanguage: 'ru' },
                 summaryCommandTemplate: 'true',
                 maxAttempts: 2
-            })
-        ).rejects.toBeInstanceOf(SummaryValidationFailedError);
+            });
+            expect.fail('expected SummaryValidationFailedError');
+        } catch (e) {
+            err = e;
+        }
+        expect(err).toBeInstanceOf(SummaryValidationFailedError);
+        expect((err as SummaryValidationFailedError).replyLanguage).toBe('ru');
     });
 
     it('throws when summary file is empty after summary command', async () => {

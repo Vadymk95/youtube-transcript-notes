@@ -28,17 +28,13 @@ You are working on the **youtube-transcript-notes** repository: a **local-first*
 - **Whisper path:** Document and optionally detect missing Whisper **before** audio download; surface a single actionable error (“install Whisper or narrow `YT_TRANSCRIPT_SUB_LANGS`”).
 - **Description:** Description is part of the **canonical input** for the summarizing model: it appears in **`transcript.md` YAML** (`description: "<JSON string>"`) when non-empty and in **`manifest.json`** as **`videoDescription`** (may be empty string). Summaries should still follow the **transcript-first** rule: do not invent facts; description may contain links the audio never mentions.
 
-## Alignment with existing technical debt / roadmap
+## Alignment with repo docs
 
-Open **`docs/technical-debt-roadmap.md`** and **`docs/troubleshooting.md`**:
+Open **`docs/technical-debt-roadmap.md`** (condensed **open backlog only**), **`docs/troubleshooting.md`**, and **`.cursor/brain/DECISIONS.md`**:
 
-- **Troubleshooting doc** covers `yt-dlp`, `ffmpeg`, Whisper, HTTP **429**, and env flags — use it for user-facing mitigation (e.g. narrowing `YT_TRANSCRIPT_SUB_LANGS`).
-- **DECISIONS (`/.cursor/brain/DECISIONS.md`):** “Bounded default for yt-dlp `--sub-langs`” — explains why the default list is short; it does **not** remove 429 under load, so **optional code hardening** (sequential lang attempts, retry/backoff, clearer preflight errors) remains on the roadmap.
-
-Optional future items from the same roadmap that overlap:
-
-- **Productize the current strengths:** smoother CLI / output modes (could include “retry prepare with suggested env”).
-- **Evaluate expansion paths:** structured JSON output (manifest already JSON; any expansion should stay compatible with `videoDescription`).
+- **Prepare path:** Sequential `--sub-langs`, 429 retry, Whisper preflight before audio, and description in manifest are **implemented** — see DECISIONS and pipeline source.
+- **Troubleshooting** remains the user-facing mitigation guide (429, env vars, binaries).
+- **Remaining backlog** in the roadmap file lists mostly productization (optional summarizer, output modes, fixtures/benchmark) — not the incident above unless regressions appear.
 
 ## Constraints
 

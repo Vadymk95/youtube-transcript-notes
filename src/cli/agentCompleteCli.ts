@@ -2,6 +2,7 @@
 import { parseArgs } from 'node:util';
 
 import { runAgentComplete, SummaryValidationFailedError } from '@/summary/agentCompleteFlow';
+import { formatSummaryValidationHints } from '@/summary/summaryValidationHints';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes — prepare + optional local summary + validate
@@ -30,7 +31,7 @@ Without --prepare-only, YT_SUMMARY_CMD or --summary-cmd is required.
 Local-first: this repo does not call a cloud API; you wire ollama, claude CLI, etc.
 
 Output:
-  JSON to stdout. Exit 0 on success; 1 on error; validation failures print errors in JSON.
+  JSON to stdout. Exit 0 on success; 1 on error; validation failures print errors in JSON and a hint block on stderr.
 `);
 }
 
@@ -116,11 +117,19 @@ async function main(): Promise<void> {
                     {
                         validation: e.validation,
                         summaryPath: e.summaryPath,
+                        replyLanguage: e.replyLanguage,
                         attempts: e.attempts
                     },
                     null,
                     2
                 )
+            );
+            console.error(
+                formatSummaryValidationHints({
+                    errors: e.validation.errors,
+                    replyLanguage: e.replyLanguage,
+                    summaryPath: e.summaryPath
+                })
             );
             process.exit(1);
         }

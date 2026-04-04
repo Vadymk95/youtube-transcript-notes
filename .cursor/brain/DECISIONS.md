@@ -100,6 +100,16 @@
 
 ---
 
+## [2026-04] Validation failures: JSON on stdout, hints on stderr
+
+**Decision**: `agent:check-summary` keeps **one JSON object on stdout** for machine use. When validation fails, it also prints a **multiline hint block on stderr** (`formatSummaryValidationHints`) with the active preset, a copy-paste `agent:check-summary` line, and error-specific tips. **`agent:complete`** follows the same pattern for `SummaryValidationFailedError` and includes `replyLanguage` in the JSON envelope.
+
+**Why**: Roadmap P0 asked for in-flow guidance without breaking JSON consumers or changing the validator contract shape on stdout.
+
+**Trade-off**: Operators must know to read stderr for hints; scripts should rely on exit code + stdout only.
+
+---
+
 ## [2026-04] Sequential subtitle attempts, 429 retry, and Whisper preflight
 
 **Decision**: `downloadManualSubs` / `downloadAutoSubs` call yt-dlp once per **positive** language in `YT_TRANSCRIPT_SUB_LANGS` (default list preserved), appending shared exclusions (e.g. `-live_chat`) each time. If the list contains **`all`**, a single combined `--sub-langs` request is used. After an attempt fails with HTTP **429**, the same language is retried once after **`YT_TRANSCRIPT_SUB_429_RETRY_MS`** (default 3500 ms; invalid or non-finite values fall back to 3500). Before **`downloadAudio`** on the Whisper path, **`assertWhisperCommandResolvable()`** validates the first simple token of the whisper template (PATH or file path); pipes, `sh -c`, or leading `{{` placeholders skip the check.
