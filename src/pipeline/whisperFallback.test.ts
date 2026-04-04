@@ -27,15 +27,13 @@ describe('extractWhisperExecutableForPreflight', () => {
     it('reads the first token from a default-style template', () => {
         expect(
             extractWhisperExecutableForPreflight(
-                'whisper "{{audio}}" --output_dir "{{outdir}}" --model small'
+                'whisper {{audio}} --output_dir {{outdir}} --model small'
             )
         ).toBe('whisper');
     });
 
     it('unwraps a quoted first token', () => {
-        expect(extractWhisperExecutableForPreflight('"whisper-cli" "{{audio}}"')).toBe(
-            'whisper-cli'
-        );
+        expect(extractWhisperExecutableForPreflight('"whisper-cli" {{audio}}')).toBe('whisper-cli');
     });
 
     it('returns null for pipes and shell delegation', () => {
@@ -44,7 +42,7 @@ describe('extractWhisperExecutableForPreflight', () => {
     });
 
     it('returns null when the command starts with a placeholder', () => {
-        expect(extractWhisperExecutableForPreflight('{{whisper}} "{{audio}}"')).toBeNull();
+        expect(extractWhisperExecutableForPreflight('{{whisper}} {{audio}}')).toBeNull();
     });
 });
 
@@ -55,14 +53,14 @@ describe('assertWhisperCommandResolvable', () => {
 
     it('resolves when command -v succeeds', async () => {
         runCmdMock.mockResolvedValue({ stdout: '/usr/bin/whisper\n', stderr: '' });
-        await assertWhisperCommandResolvable('whisper "{{audio}}" --model tiny');
+        await assertWhisperCommandResolvable('whisper {{audio}} --model tiny');
         expect(runCmdMock).toHaveBeenCalledWith('sh', ['-c', 'command -v -- "whisper"']);
     });
 
     it('throws when command -v fails', async () => {
         runCmdMock.mockRejectedValue(new Error('exit 1'));
         await expect(
-            assertWhisperCommandResolvable('whisper "{{audio}}" --model tiny')
+            assertWhisperCommandResolvable('whisper {{audio}} --model tiny')
         ).rejects.toThrow(/was not found on PATH/);
     });
 
@@ -70,7 +68,7 @@ describe('assertWhisperCommandResolvable', () => {
         const marker = path.join(os.tmpdir(), `whisper-preflight-${Date.now()}.txt`);
         await writeFile(marker, '', 'utf8');
         try {
-            await assertWhisperCommandResolvable(`${marker} "{{audio}}"`);
+            await assertWhisperCommandResolvable(`${marker} {{audio}}`);
             expect(runCmdMock).not.toHaveBeenCalled();
         } finally {
             await rm(marker, { force: true });
@@ -79,7 +77,7 @@ describe('assertWhisperCommandResolvable', () => {
 
     it('throws when the first token is an absolute path that does not exist', async () => {
         const missing = path.join(os.tmpdir(), `whisper-missing-${Date.now()}-no-such-file`);
-        await expect(assertWhisperCommandResolvable(`${missing} "{{audio}}"`)).rejects.toThrow(
+        await expect(assertWhisperCommandResolvable(`${missing} {{audio}}`)).rejects.toThrow(
             /executable not found/
         );
         expect(runCmdMock).not.toHaveBeenCalled();
@@ -106,7 +104,7 @@ describe('runWhisperToVtt', () => {
         await mkdir(whisperOut, { recursive: true });
         await writeFile(path.join(whisperOut, 'out.vtt'), minimalVtt, 'utf8');
 
-        const template = 'touch "{{audio}}" && test -d "{{outdir}}"';
+        const template = 'touch {{audio}} && test -d {{outdir}}';
         await runWhisperToVtt(audio, whisperOut, template);
 
         expect(runCmdMock).toHaveBeenCalledTimes(1);
@@ -116,6 +114,24 @@ describe('runWhisperToVtt', () => {
         expect(args[1]).toContain(whisperOut);
         expect(args[1]).not.toContain('{{audio}}');
         expect(args[1]).not.toContain('{{outdir}}');
+    });
+
+    it('POSIX-single-quotes audio and outdir paths that contain single quotes', async () => {
+        const quotedDir = path.join(outDir, "with'quote");
+        await mkdir(quotedDir, { recursive: true });
+        const audio = path.join(quotedDir, 'track.m4a');
+        await writeFile(audio, '', 'utf8');
+        const whisperOut = path.join(quotedDir, 'whisper-out');
+        await mkdir(whisperOut, { recursive: true });
+        await writeFile(path.join(whisperOut, 'out.vtt'), minimalVtt, 'utf8');
+
+        const template = 'test -f {{audio}} && test -d {{outdir}}';
+        await runWhisperToVtt(audio, whisperOut, template);
+
+        const [, args] = runCmdMock.mock.calls[0] as [string, string[]];
+        const shBody = args[1] as string;
+        expect(shBody).toContain("with'\\''quote");
+        expect(shBody).not.toBe(`test -f ${audio} && test -d ${whisperOut}`);
     });
 
     it('returns the newest .vtt when multiple exist', async () => {
@@ -148,6 +164,38 @@ describe('runWhisperToVtt', () => {
         await expect(runWhisperToVtt(audio, emptyWhisper, 'true')).rejects.toThrow(
             /produced no \.vtt/
         );
+    });
+
+    it('omits full shell command from error unless YT_TRANSCRIPT_DEBUG is set', async () => {
+        const prev = process.env.YT_TRANSCRIPT_DEBUG;
+        delete process.env.YT_TRANSCRIPT_DEBUG;
+        const audio = path.join(outDir, 'a.m4a');
+        await writeFile(audio, '', 'utf8');
+        const emptyWhisper = path.join(outDir, 'whisper-empty2');
+        await mkdir(emptyWhisper, { recursive: true });
+
+        try {
+            await runWhisperToVtt(audio, emptyWhisper, 'true');
+            expect.fail('expected throw');
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            expect(msg).not.toMatch(/Command was:/);
+        }
+
+        process.env.YT_TRANSCRIPT_DEBUG = '1';
+        try {
+            await runWhisperToVtt(audio, emptyWhisper, 'true');
+            expect.fail('expected throw');
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            expect(msg).toMatch(/Command was:/);
+        }
+
+        if (prev === undefined) {
+            delete process.env.YT_TRANSCRIPT_DEBUG;
+        } else {
+            process.env.YT_TRANSCRIPT_DEBUG = prev;
+        }
     });
 });
 

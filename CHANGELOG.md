@@ -2,6 +2,13 @@
 
 ## 1.5.1 — 2026-04-04
 
+### Security
+
+- Validate `yt-dlp` video ids before using them as path segments; enforce a YouTube hostname allowlist at CLI entrypoints with escape hatch `YT_TRANSCRIPT_ALLOW_ANY_URL` / `--allow-any-url`.
+- POSIX-single-quote shell substitutions for Whisper and `YT_SUMMARY_CMD` placeholders (including `VIDEO_ID`); **migration:** remove extra `"..."` around `{{…}}` in templates — each placeholder is already one quoted word. Default `YT_TRANSCRIPT_WHISPER_CMD` uses bare `{{audio}}` / `{{outdir}}` so argv matches real paths.
+- Quieter default error text for Whisper/audio failures; full command details only when `YT_TRANSCRIPT_DEBUG` is set.
+- Optional `npm run agent:check-summary -- <file> --artifacts-root <dir>` to constrain which summary paths automation may read.
+
 ### Changed
 
 - Summary prompt and injected `REQUIRED_OUTPUT_FORMAT`: BLUF-first topic, clearer outline vs main-ideas roles, reading-order hint for humans, and speculative-language rules aligned with the validator (ambiguity section + handoff risks only).

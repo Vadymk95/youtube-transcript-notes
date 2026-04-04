@@ -51,7 +51,9 @@ artifacts/videos/<videoId>/
 
 The reply language, summary filename, headings, ambiguity fallback, and validator rules are driven by **`src/summary/outputLanguage.ts`** presets, selected with **`YT_SUMMARY_LANG`** (e.g. `ru`, `en`) or **`--reply-lang`** on `agent:prepare` / `agent:check-summary` (CLI wins over env).
 
-Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.<replyLanguage>.md` (pass `--reply-lang` if it does not match the default `ru`).
+Run `npm run agent:check-summary -- "<summary-file>"` after writing `summary.<replyLanguage>.md` (pass `--reply-lang` if it does not match the default `ru`). Optional `--artifacts-root <dir>` requires the resolved summary path to sit under that root (automation guard).
+
+Default transcript/agent CLIs enforce a **YouTube hostname allowlist**; use `YT_TRANSCRIPT_ALLOW_ANY_URL` or `--allow-any-url` for other yt-dlp-supported URLs. `YT_SUMMARY_CMD` placeholders are expanded as POSIX-quoted words — do not wrap `{{…}}` in extra quotes in the template.
 
 ## Prompt Contract
 

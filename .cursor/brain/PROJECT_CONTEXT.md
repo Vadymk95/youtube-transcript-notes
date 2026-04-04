@@ -45,7 +45,7 @@ Use the Node version from `.nvmrc` (load `nvm` in non-interactive shells if need
 
 ## Constraints
 
-- Input scope for v1: YouTube URLs only
+- Default CLI input: YouTube watch URLs (hostname allowlist); other yt-dlp-supported URLs need the documented env or CLI escape hatch
 - Final summary language: presets in `src/summary/outputLanguage.ts`, selected with **`YT_SUMMARY_LANG`** or **`--reply-lang`** (default `ru`; built-in `en`)
 - Transcript must come from the local pipeline, not from the title or guessed content
 - `prompts/video-notes-prompt.md` is the template authority for the summary structure

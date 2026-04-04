@@ -19,6 +19,7 @@ import {
     parseSub429RetryMs,
     parseVideoInfoFromDumpJson
 } from '@/pipeline/ytDlp';
+import { INVALID_VIDEO_ID_PREFIX } from '@/shared/safePathSegment';
 
 const minimalVtt = `WEBVTT
 
@@ -124,6 +125,25 @@ describe('parseVideoInfoFromDumpJson', () => {
         expect(() => parseVideoInfoFromDumpJson(JSON.stringify({ id: '' }))).toThrow(
             'yt-dlp did not return video id'
         );
+    });
+
+    it('throws when id is only whitespace', () => {
+        expect(() => parseVideoInfoFromDumpJson(JSON.stringify({ id: '   \t' }))).toThrow(
+            'yt-dlp did not return video id'
+        );
+    });
+
+    it('rejects unsafe ids for local paths', () => {
+        expect(() =>
+            parseVideoInfoFromDumpJson(JSON.stringify({ id: '../evil', title: 'x' }))
+        ).toThrow(INVALID_VIDEO_ID_PREFIX);
+    });
+
+    it('returns trimmed id', () => {
+        const info = parseVideoInfoFromDumpJson(
+            JSON.stringify({ id: '  abc  ', title: 'T', description: '' })
+        );
+        expect(info.id).toBe('abc');
     });
 
     it('uses id as title when title is only whitespace', () => {

@@ -1,15 +1,16 @@
+import { quoteForPosixShSingle } from '@/shared/posixShellQuote';
 import { runCmd } from '@/shared/runCmd';
 
 const PLACEHOLDER = /\{\{([A-Z0-9_]+)\}\}/;
 
 /**
  * Inline placeholders into a user shell template (same pattern as Whisper).
- * All values should be absolute paths or safe strings — the command runs as `sh -c`.
+ * Values are wrapped for POSIX `sh -c` so metacharacters in paths cannot break out.
  */
 export function interpolateSummaryCommand(template: string, vars: Record<string, string>): string {
     let s = template;
     for (const [k, v] of Object.entries(vars)) {
-        s = s.split(`{{${k}}}`).join(v);
+        s = s.split(`{{${k}}}`).join(quoteForPosixShSingle(v));
     }
     const m = s.match(PLACEHOLDER);
     if (m) {

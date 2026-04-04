@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { assertSummaryFileWithinArtifactsRoot } from '@/shared/summaryArtifactPathPolicy';
 import { resolveSummaryOutputLanguage } from '@/summary/outputLanguage';
 import { validateSummary, type SummaryValidationResult } from '@/summary/summaryContract';
 import { formatSummaryValidationHints } from '@/summary/summaryValidationHints';
@@ -16,6 +17,7 @@ Usage:
 
 Options:
   --reply-lang <code>   Preset: ru | en (overrides YT_SUMMARY_LANG; must match how the summary was written)
+  --artifacts-root <dir>  When set, require the summary file to resolve under this directory (automation guard)
 
 Output:
   Always prints one JSON object to stdout (including invalid --reply-lang / YT_SUMMARY_LANG), then exits 0 on success and 1 on failure.
@@ -28,6 +30,7 @@ async function main(): Promise<void> {
         args: process.argv.slice(2),
         options: {
             'reply-lang': { type: 'string' },
+            'artifacts-root': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -46,6 +49,18 @@ async function main(): Promise<void> {
     }
 
     const absolutePath = path.resolve(process.cwd(), summaryFile);
+    const artifactsRoot = values['artifacts-root'];
+    if (artifactsRoot !== undefined) {
+        try {
+            assertSummaryFileWithinArtifactsRoot(
+                absolutePath,
+                path.resolve(process.cwd(), artifactsRoot)
+            );
+        } catch (e: unknown) {
+            console.error(e instanceof Error ? e.message : e);
+            process.exit(1);
+        }
+    }
     const content = await readFile(absolutePath, 'utf8');
 
     let result: SummaryValidationResult;

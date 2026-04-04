@@ -96,9 +96,9 @@ export async function runAgentComplete(
                 `Missing summary command. Set ${ENV_SUMMARY_CMD} or pass --summary-cmd, or use --prepare-only.`,
                 '',
                 'Example (your local CLI will differ):',
-                `  export ${ENV_SUMMARY_CMD}='cat "{{SUMMARY_PROMPT_PATH}}" | llm-bin > "{{SUMMARY_OUT_PATH}}"'`,
+                `  export ${ENV_SUMMARY_CMD}='cat {{SUMMARY_PROMPT_PATH}} | llm-bin > {{SUMMARY_OUT_PATH}}'`,
                 '',
-                'Placeholders {{SUMMARY_PROMPT_PATH}} and {{SUMMARY_OUT_PATH}} are replaced with absolute paths; the shell must write the final markdown to SUMMARY_OUT_PATH.'
+                'Placeholders are replaced with POSIX-quoted absolute paths (do not wrap them in extra quotes in your template); the shell must write the final markdown to SUMMARY_OUT_PATH.'
             ].join('\n')
         );
     }
@@ -111,7 +111,7 @@ export async function runAgentComplete(
         const content = await readFile(workflow.summaryPath, 'utf8');
         if (!content.trim()) {
             throw new Error(
-                `Summary file is empty after summary command (attempt ${attempt}/${maxAttempts}): ${workflow.summaryPath}`
+                `Summary file is empty after summary command (attempt ${attempt}/${maxAttempts}): ${path.basename(workflow.summaryPath)}`
             );
         }
         lastValidation = validateSummary(content, workflow.replyLanguage);
@@ -129,7 +129,7 @@ export async function runAgentComplete(
         throw new Error('Validation loop exited without result');
     }
     throw new SummaryValidationFailedError(
-        `Summary validation failed after ${maxAttempts} attempt(s). Fix your ${ENV_SUMMARY_CMD} or edit ${workflow.summaryPath} manually, then run agent:check-summary.`,
+        `Summary validation failed after ${maxAttempts} attempt(s). Fix your ${ENV_SUMMARY_CMD} or edit ${path.basename(workflow.summaryPath)} manually, then run agent:check-summary.`,
         lastValidation,
         workflow.summaryPath,
         maxAttempts,

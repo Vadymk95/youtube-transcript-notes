@@ -1,12 +1,22 @@
 # Architectural Decisions
 
+## [2026-04] CLI trust boundaries: YouTube URL allowlist, safe video ids, quoted shell args
+
+**Decision**: **`transcriptCli`**, **`agentWorkflowCli`**, and **`agentCompleteCli`** call **`assertYoutubeWatchUrl`** by default (http/https + hostname in `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, `youtu.be`). **`YT_TRANSCRIPT_ALLOW_ANY_URL`** (`1` / `true` / `yes`) or **`--allow-any-url`** skips the hostname check for power users and tests. **`parseVideoInfoFromDumpJson`** always runs **`assertSafeVideoIdForPath`** on the trimmed id before returning **`VideoInfo`**. Whisper and summary shell templates substitute placeholders with **`quoteForPosixShSingle`** so paths and `VIDEO_ID` cannot break out of a single `sh -c` word without newlines/NUL. **`agent:check-summary`** accepts optional **`--artifacts-root`** to reject summary paths outside a resolved directory.
+
+**Why**: Aligns runtime with “YouTube URLs only” product scope while keeping a documented escape hatch; closes directory traversal via malicious ids; reduces shell injection from path-shaped data; limits arbitrary reads when the validator is automated.
+
+**Trade-off**: **`YT_SUMMARY_CMD` / `--summary-cmd` recipes must not wrap `{{…}}` in extra double quotes** (each placeholder is already quoted). Operators who relied on `cat "{{PATH}}"` must switch to `cat {{PATH}}`.
+
+---
+
 ## [2026-04] `agent:complete` uses user shell for summarization
 
 **Decision**: **`npm run agent:complete`** runs **`prepareAgentWorkflow`**, then **`YT_SUMMARY_CMD`** (or **`--summary-cmd`**) via `sh -c` with path placeholders, then **`validateSummary`**. **`--prepare-only`** skips the shell and is the default CI-friendly path. No cloud API is bundled.
 
 **Why**: Roadmap “one command” without breaking local-first policy; mirrors the existing Whisper command pattern.
 
-**Trade-off**: Users must supply a working local CLI; malformed commands and shell injection risk are the operator’s responsibility, same as `YT_TRANSCRIPT_WHISPER_CMD`.
+**Trade-off**: Users must supply a working local CLI; complex templates (pipes, subshells) remain the operator’s responsibility. Path-shaped placeholders are shell-quoted; arbitrary shell syntax in the template can still be dangerous if misconfigured.
 
 ---
 

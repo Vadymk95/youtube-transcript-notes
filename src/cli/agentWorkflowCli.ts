@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 
+import { assertYoutubeWatchUrl } from '@/shared/youtubeUrlPolicy';
 import { prepareAgentWorkflow } from '@/summary/agentWorkflow';
 
 function printHelp(): void {
@@ -18,6 +19,7 @@ Options:
   --whisper-cmd <shell>    Override whisper command; use {{audio}} and {{outdir}}
   --keep-tmp               Keep temp work directory from runPipeline
   --reply-lang <code>      Summary preset: ru | en (overrides YT_SUMMARY_LANG)
+  --allow-any-url          Skip YouTube-only URL allowlist (see YT_TRANSCRIPT_ALLOW_ANY_URL)
   -h, --help               Show help
 
 Output:
@@ -36,6 +38,7 @@ async function main(): Promise<void> {
             'whisper-cmd': { type: 'string' },
             'keep-tmp': { type: 'boolean', default: false },
             'reply-lang': { type: 'string' },
+            'allow-any-url': { type: 'boolean', default: false },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -50,6 +53,13 @@ async function main(): Promise<void> {
     if (!url) {
         console.error('Error: missing YouTube URL\n');
         printHelp();
+        process.exit(1);
+    }
+
+    try {
+        assertYoutubeWatchUrl(url, { allowAnyUrl: values['allow-any-url'] });
+    } catch (e: unknown) {
+        console.error(e instanceof Error ? e.message : e);
         process.exit(1);
     }
 

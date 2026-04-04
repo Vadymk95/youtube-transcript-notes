@@ -4,7 +4,9 @@
 
 ### Agent summary flow
 
-The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkflowCli`, which calls `prepareAgentWorkflow()` and `runPipeline()` to produce subtitles or Whisper fallback, then assembles artifacts. Optionally **`agent:complete`** (`agentCompleteCli`) runs prepare, a user-defined **`YT_SUMMARY_CMD`** shell, and `validateSummary`. Failed validation prints JSON (and **`agent:check-summary`** prints JSON to stdout) plus **human hints on stderr** from `summaryValidationHints.ts`. The chat step reads `manifest.json` and `summary-prompt.md`, writes `summary.<replyLanguage>.md` (default: `summary.ru.md`), runs `agent:check-summary` until validation passes, and answers in the configured reply language. Prompt assembly (`prompts/video-notes-prompt.md` + `renderPromptRequiredOutputFormat()` in `outputLanguage.ts`) encodes BLUF-first topic guidance, outline vs ideas roles, human reading-order hints, and speculative-language rules aligned with the validator. Implementation spine: `src/cli/agentWorkflowCli.ts`, `src/cli/agentCompleteCli.ts`, `src/summary/agentWorkflow.ts`, `src/summary/agentCompleteFlow.ts`; validation: `src/cli/summaryValidatorCli.ts` with rules in `src/summary/summaryContract.ts` and `src/summary/outputLanguage.ts`.
+- **Local prepare:** `agentWorkflowCli` runs `prepareAgentWorkflow()` → `runPipeline()` (manual or auto VTT, Whisper fallback) → artifact bundle. **`agent:complete`** (`agentCompleteCli`) can chain the same prepare, a user **`YT_SUMMARY_CMD`** shell, and `validateSummary`. On validation failure, CLIs emit JSON on stdout and human-oriented hints on stderr (`summaryValidationHints.ts`); **`agent:check-summary`** follows the same stdout/stderr split.
+- **Chat handoff:** Read `manifest.json` and `summary-prompt.md`, write `summary.<replyLanguage>.md` (default `summary.ru.md`), loop **`agent:check-summary`** until pass, reply in the configured reply language.
+- **Prompt vs validator:** `prompts/video-notes-prompt.md` plus `renderPromptRequiredOutputFormat()` in `outputLanguage.ts` stay aligned with `validateSummary()` in `summaryContract.ts` and the active language preset. Spine: `src/cli/agentWorkflowCli.ts`, `agentCompleteCli.ts`, `src/summary/agentWorkflow.ts`, `src/summary/agentCompleteFlow.ts`, `src/cli/summaryValidatorCli.ts`.
 
 ### Transcript generation flow
 
@@ -40,6 +42,10 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 - `src/transcript/` — VTT parsing, picking, auto-caption collapse, formatting; `suffixPrefixOverlap.ts` — shared adjacency overlap for collapse + quality metrics; `types.ts` holds transcript metadata types used by manifest and pipeline
 - `fixtures/transcript-quality/` plus `src/transcript/qualityFixtureLoader.ts` / `qualityHarness.ts` — file-based transcript quality corpus, loader, metrics, and acceptance gates for auto-caption cleanup changes
 - `src/shared/runCmd.ts` — command runner with missing-binary messaging
+- `src/shared/safePathSegment.ts` — `assertSafeVideoIdForPath` (path-segment safety for `artifacts/videos/<videoId>/`)
+- `src/shared/youtubeUrlPolicy.ts` — YouTube hostname allowlist + `YT_TRANSCRIPT_ALLOW_ANY_URL` / CLI escape hatch
+- `src/shared/posixShellQuote.ts` — POSIX single-quote wrapping for `sh -c` substitutions
+- `src/shared/summaryArtifactPathPolicy.ts` — optional `agent:check-summary --artifacts-root` path constraint
 - `prompts/video-notes-prompt.md` — summary template for assembly
 
 ## Artifact contract

@@ -67,7 +67,7 @@ function baseOptions(outputPath: string) {
         forceWhisper: false,
         minSubtitleChars: 80,
         audioFormat: 'm4a',
-        whisperCommand: 'whisper "{{audio}}" --output_dir "{{outdir}}"',
+        whisperCommand: 'whisper {{audio}} --output_dir {{outdir}}',
         keepWorkDir: false
     };
 }
@@ -267,7 +267,7 @@ epsilon zeta eta theta iota kappa lambda
         expect(result.meta.source).toBe('whisper');
         expect(result.segmentCount).toBe(1);
         expect(wf.assertWhisperCommandResolvable).toHaveBeenCalledWith(
-            'whisper "{{audio}}" --output_dir "{{outdir}}"'
+            'whisper {{audio}} --output_dir {{outdir}}'
         );
         expect(yt.downloadAudio).toHaveBeenCalledWith(
             'https://www.youtube.com/watch?v=test',
@@ -301,7 +301,7 @@ epsilon zeta eta theta iota kappa lambda
         expect(yt.downloadManualSubs).not.toHaveBeenCalled();
         expect(yt.downloadAutoSubs).not.toHaveBeenCalled();
         expect(wf.assertWhisperCommandResolvable).toHaveBeenCalledWith(
-            'whisper "{{audio}}" --output_dir "{{outdir}}"'
+            'whisper {{audio}} --output_dir {{outdir}}'
         );
         expect(result.meta.source).toBe('whisper');
     });

@@ -4,6 +4,7 @@ Quick reference for the most common **local-first** pipeline failures. For incid
 
 ## yt-dlp
 
+- **Wrong or blocked URL**: by default only common **YouTube** hostnames are accepted (`youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, `youtu.be`). For other sites supported by yt-dlp, set `YT_TRANSCRIPT_ALLOW_ANY_URL=1` or pass `--allow-any-url` on the transcript / `agent:prepare` / `agent:complete` CLI.
 - **Not found**: install [yt-dlp](https://github.com/yt-dlp/yt-dlp) and ensure it is on `PATH`, or set `YT_DLP_BIN` to the binary path.
 - **Subtitles missing**: try `YT_TRANSCRIPT_DEBUG=1` or `NODE_DEBUG=yt-transcript:ytdlp` to print subtitle attempt failures on stderr.
 - **HTTP 429 (Too Many Requests)**: YouTube may rate-limit when many caption languages are requested. The pipeline tries **one positive language at a time** (with shared exclusions like `-live_chat`) and can **retry once** per language after a short wait (`YT_TRANSCRIPT_SUB_429_RETRY_MS`, default `3500` ms; invalid values use that default). Narrow `YT_TRANSCRIPT_SUB_LANGS` further (e.g. `ru`) if you still hit 429. Avoid `all` unless you accept many requests and higher risk.

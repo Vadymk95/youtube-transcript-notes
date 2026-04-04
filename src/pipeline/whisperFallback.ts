@@ -1,13 +1,14 @@
 import { access, constants, readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import { quoteForPosixShSingle } from '@/shared/posixShellQuote';
 import { runCmd } from '@/shared/runCmd';
 import { parseWebVtt } from '@/transcript/parseVtt';
 import type { TranscriptSegment } from '@/transcript/types';
 
 export const DEFAULT_WHISPER_CMD =
     process.env.YT_TRANSCRIPT_WHISPER_CMD ??
-    'whisper "{{audio}}" --output_dir "{{outdir}}" --model small --output_format vtt --language auto';
+    'whisper {{audio}} --output_dir {{outdir}} --model small --output_format vtt --language auto';
 
 /**
  * Best-effort first executable token for PATH checks. Returns null when the template is too
@@ -62,7 +63,7 @@ export async function assertWhisperCommandResolvable(template: string): Promise<
             await access(bin, constants.F_OK);
         } catch {
             throw new Error(
-                `Whisper fallback scheduled but executable not found: ${bin}\n` +
+                `Whisper fallback scheduled but executable not found: ${path.basename(bin)}\n` +
                     `Install Whisper or fix --whisper-cmd / YT_TRANSCRIPT_WHISPER_CMD. See docs/troubleshooting.md`
             );
         }
@@ -83,10 +84,10 @@ export async function assertWhisperCommandResolvable(template: string): Promise<
     }
 }
 
-function interpolate(template: string, vars: Record<string, string>): string {
+function interpolateWhisperPaths(template: string, vars: Record<string, string>): string {
     let s = template;
     for (const [k, v] of Object.entries(vars)) {
-        s = s.split(`{{${k}}}`).join(v);
+        s = s.split(`{{${k}}}`).join(quoteForPosixShSingle(v));
     }
     return s;
 }
@@ -100,7 +101,7 @@ export async function runWhisperToVtt(
     outDir: string,
     commandTemplate: string
 ): Promise<string> {
-    const cmd = interpolate(commandTemplate, {
+    const cmd = interpolateWhisperPaths(commandTemplate, {
         audio: audioPath,
         outdir: outDir
     });
@@ -113,13 +114,17 @@ export async function runWhisperToVtt(
     const names = await readdir(outDir);
     const vtts = names.filter((n) => n.endsWith('.vtt'));
     if (vtts.length === 0) {
-        throw new Error(`Whisper command produced no .vtt in ${outDir}. Command was: ${cmd}`);
+        const dirHint = path.basename(outDir);
+        const suffix = process.env.YT_TRANSCRIPT_DEBUG ? `. Command was: ${cmd}` : '';
+        throw new Error(
+            `Whisper command produced no .vtt in output directory "${dirHint}"${suffix}`
+        );
     }
 
     const withPath = vtts.map((n) => path.join(outDir, n));
     const first = withPath[0];
     if (!first) {
-        throw new Error(`No VTT paths resolved in ${outDir}`);
+        throw new Error(`No VTT paths resolved in "${path.basename(outDir)}"`);
     }
     let newest = first;
     let newestM = 0;

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { debuglog } from 'node:util';
 
 import { runCmd } from '@/shared/runCmd';
+import { assertSafeVideoIdForPath } from '@/shared/safePathSegment';
 
 const debugYtDlpAttempt = debuglog('yt-transcript:ytdlp');
 
@@ -121,10 +122,12 @@ export function parseVideoInfoFromDumpJson(stdout: string): VideoInfo {
         throw new Error('yt-dlp JSON metadata was not an object');
     }
     const o = data as Record<string, unknown>;
-    const id = typeof o.id === 'string' ? o.id : '';
-    if (!id) {
+    const idRaw = typeof o.id === 'string' ? o.id : '';
+    if (!idRaw.trim()) {
         throw new Error('yt-dlp did not return video id');
     }
+    const id = idRaw.trim();
+    assertSafeVideoIdForPath(id);
     const title = typeof o.title === 'string' && o.title.trim() !== '' ? o.title : id;
     const description =
         typeof o.description === 'string' && o.description.trim() !== '' ? o.description : '';
@@ -248,7 +251,7 @@ export async function downloadAudio(
                 n.endsWith('.webm'))
     );
     if (!audio) {
-        throw new Error(`Audio file not found in ${workDir} for id ${videoId}`);
+        throw new Error(`Audio file not found for video id ${videoId}`);
     }
     return path.join(workDir, audio);
 }

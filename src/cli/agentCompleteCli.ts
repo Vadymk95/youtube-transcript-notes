@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 
+import { assertYoutubeWatchUrl } from '@/shared/youtubeUrlPolicy';
 import { runAgentComplete, SummaryValidationFailedError } from '@/summary/agentCompleteFlow';
 import { formatSummaryValidationHints } from '@/summary/summaryValidationHints';
 
@@ -15,6 +16,7 @@ Options:
   --prepare-only           Only run prepare; print JSON (no YT_SUMMARY_CMD needed)
   --summary-cmd <shell>    Overrides YT_SUMMARY_CMD for this run (sh -c template)
   --attempts <n>           Max summary+validate tries (1–10, default 1)
+  --allow-any-url          Skip YouTube-only URL allowlist (see YT_TRANSCRIPT_ALLOW_ANY_URL)
   -h, --help               Show help
 
 Summary command placeholders (use absolute paths; all are substituted for you):
@@ -60,6 +62,7 @@ async function main(): Promise<void> {
             'prepare-only': { type: 'boolean', default: false },
             'summary-cmd': { type: 'string' },
             attempts: { type: 'string', default: '1' },
+            'allow-any-url': { type: 'boolean', default: false },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -74,6 +77,13 @@ async function main(): Promise<void> {
     if (!url) {
         console.error('Error: missing YouTube URL\n');
         printHelp();
+        process.exit(1);
+    }
+
+    try {
+        assertYoutubeWatchUrl(url, { allowAnyUrl: values['allow-any-url'] });
+    } catch (e: unknown) {
+        console.error(e instanceof Error ? e.message : e);
         process.exit(1);
     }
 

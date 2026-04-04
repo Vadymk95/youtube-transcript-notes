@@ -9,20 +9,27 @@ vi.mock('@/shared/runCmd', () => ({
 import { interpolateSummaryCommand, runSummaryShellCommand } from '@/summary/summaryCommand';
 
 describe('interpolateSummaryCommand', () => {
-    it('replaces all given placeholders', () => {
+    it('replaces all given placeholders with POSIX single-quoted args', () => {
         const cmd = interpolateSummaryCommand(
-            'cat "{{SUMMARY_PROMPT_PATH}}" > "{{SUMMARY_OUT_PATH}}"',
+            'cat {{SUMMARY_PROMPT_PATH}} > {{SUMMARY_OUT_PATH}}',
             {
                 SUMMARY_PROMPT_PATH: '/tmp/p',
                 SUMMARY_OUT_PATH: '/tmp/o'
             }
         );
-        expect(cmd).toBe('cat "/tmp/p" > "/tmp/o"');
+        expect(cmd).toBe(`cat '/tmp/p' > '/tmp/o'`);
+    });
+
+    it('escapes single quotes inside paths', () => {
+        const cmd = interpolateSummaryCommand('echo {{VIDEO_ID}}', {
+            VIDEO_ID: `a'b`
+        });
+        expect(cmd).toBe(`echo 'a'\\''b'`);
     });
 
     it('throws when a placeholder remains', () => {
         expect(() =>
-            interpolateSummaryCommand('echo "{{SUMMARY_PROMPT_PATH}}" "{{UNKNOWN}}"', {
+            interpolateSummaryCommand('echo {{SUMMARY_PROMPT_PATH}} {{UNKNOWN}}', {
                 SUMMARY_PROMPT_PATH: '/a'
             })
         ).toThrow(/Unreplaced summary command placeholder/);
@@ -36,7 +43,7 @@ describe('runSummaryShellCommand', () => {
     });
 
     it('runs sh -c with interpolated template and default maxBuffer', async () => {
-        await runSummaryShellCommand('echo "{{VIDEO_ID}}"', { VIDEO_ID: 'abc' });
+        await runSummaryShellCommand('echo {{VIDEO_ID}}', { VIDEO_ID: 'abc' });
         expect(runCmdMock).toHaveBeenCalledTimes(1);
         const [file, args, opts] = runCmdMock.mock.calls[0] as [
             string,
@@ -45,7 +52,7 @@ describe('runSummaryShellCommand', () => {
         ];
         expect(file).toBe('sh');
         expect(args[0]).toBe('-c');
-        expect(args[1]).toBe('echo "abc"');
+        expect(args[1]).toBe(`echo 'abc'`);
         expect(opts.maxBuffer).toBe(128 * 1024 * 1024);
     });
 
@@ -53,5 +60,13 @@ describe('runSummaryShellCommand', () => {
         await runSummaryShellCommand('true', { X: 'y' }, { maxBuffer: 8192 });
         const [, , opts] = runCmdMock.mock.calls[0] as [string, string[], { maxBuffer?: number }];
         expect(opts.maxBuffer).toBe(8192);
+    });
+
+    it('quotes VIDEO_ID so shell metacharacters are not executed as syntax', async () => {
+        const malicious = `'; rm -rf /tmp/x #`;
+        await runSummaryShellCommand(`printf '%s\\n' {{VIDEO_ID}}`, { VIDEO_ID: malicious });
+        const [, args] = runCmdMock.mock.calls[0] as [string, string[]];
+        const shBody = args[1] as string;
+        expect(shBody).toBe(`printf '%s\\n' ''\\''; rm -rf /tmp/x #'`);
     });
 });
