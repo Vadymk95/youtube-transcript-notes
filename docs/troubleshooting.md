@@ -6,7 +6,7 @@ Quick reference for the most common **local-first** pipeline failures. For incid
 
 - **Not found**: install [yt-dlp](https://github.com/yt-dlp/yt-dlp) and ensure it is on `PATH`, or set `YT_DLP_BIN` to the binary path.
 - **Subtitles missing**: try `YT_TRANSCRIPT_DEBUG=1` or `NODE_DEBUG=yt-transcript:ytdlp` to print subtitle attempt failures on stderr.
-- **HTTP 429 (Too Many Requests)**: YouTube may rate-limit when many caption languages are requested. The default `YT_TRANSCRIPT_SUB_LANGS` is intentionally small; try narrowing further (e.g. one language: `YT_TRANSCRIPT_SUB_LANGS=ru`). Avoid `all` unless you accept many requests and higher 429 risk.
+- **HTTP 429 (Too Many Requests)**: YouTube may rate-limit when many caption languages are requested. The pipeline tries **one positive language at a time** (with shared exclusions like `-live_chat`) and can **retry once** per language after a short wait (`YT_TRANSCRIPT_SUB_429_RETRY_MS`, default `3500` ms; invalid values use that default). Narrow `YT_TRANSCRIPT_SUB_LANGS` further (e.g. `ru`) if you still hit 429. Avoid `all` unless you accept many requests and higher risk.
 
 ## ffmpeg
 
@@ -16,6 +16,7 @@ Quick reference for the most common **local-first** pipeline failures. For incid
 ## Whisper
 
 - Used only when manual/auto subtitles are missing or below `--min-chars`, or when you pass `--force-whisper`.
+- Before **downloading audio**, the pipeline checks that the **first simple token** of `YT_TRANSCRIPT_WHISPER_CMD` / `--whisper-cmd` exists (on `PATH` or as a file path). Complex templates (pipes, `sh -c`, leading `{{…}}`) skip this check.
 - If the shell reports **`whisper: command not found`**, install your chosen Whisper CLI (e.g. [openai-whisper](https://github.com/openai/whisper)) or set `YT_TRANSCRIPT_WHISPER_CMD` to a template that invokes your install (placeholders `{{audio}}` and `{{outdir}}`).
 
 ## Node / npm

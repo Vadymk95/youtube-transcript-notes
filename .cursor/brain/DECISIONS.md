@@ -100,6 +100,16 @@
 
 ---
 
+## [2026-04] Sequential subtitle attempts, 429 retry, and Whisper preflight
+
+**Decision**: `downloadManualSubs` / `downloadAutoSubs` call yt-dlp once per **positive** language in `YT_TRANSCRIPT_SUB_LANGS` (default list preserved), appending shared exclusions (e.g. `-live_chat`) each time. If the list contains **`all`**, a single combined `--sub-langs` request is used. After an attempt fails with HTTP **429**, the same language is retried once after **`YT_TRANSCRIPT_SUB_429_RETRY_MS`** (default 3500 ms; invalid or non-finite values fall back to 3500). Before **`downloadAudio`** on the Whisper path, **`assertWhisperCommandResolvable()`** validates the first simple token of the whisper template (PATH or file path); pipes, `sh -c`, or leading `{{` placeholders skip the check.
+
+**Why**: Roadmap P0 — fewer burst 429s than one multi-language subtitle request, clearer failure before expensive audio work when Whisper is not installed.
+
+**Trade-off**: More yt-dlp processes when the first languages produce no VTT files; operators with exotic whisper shell wrappers do not get automatic binary discovery.
+
+---
+
 ## [2026-04] Video metadata via `yt-dlp --dump-single-json`
 
 **Decision**: `fetchVideoInfo()` uses `--dump-single-json` (not separate `--print` lines) and exposes **`description`** alongside `id` and `title`.

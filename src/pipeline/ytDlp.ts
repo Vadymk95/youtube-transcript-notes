@@ -15,8 +15,88 @@ const YT_DLP = process.env.YT_DLP_BIN ?? 'yt-dlp';
  */
 const DEFAULT_SUB_LANGS = 'en,en-US,en-orig,ru,uk,-live_chat';
 
-function subLangsArg(): string {
-    return process.env.YT_TRANSCRIPT_SUB_LANGS?.trim() || DEFAULT_SUB_LANGS;
+/** Default backoff before one 429 retry per subtitle language (see `YT_TRANSCRIPT_SUB_429_RETRY_MS`). */
+export const DEFAULT_SUB_429_RETRY_MS = 3500;
+
+/**
+ * Parses `YT_TRANSCRIPT_SUB_429_RETRY_MS`: unset or empty → default; invalid number → default;
+ * finite values are clamped to ≥ 0. Exported for unit tests.
+ */
+export function parseSub429RetryMs(raw: string | undefined): number {
+    const trimmed = raw?.trim() ?? '';
+    if (trimmed === '') {
+        return DEFAULT_SUB_429_RETRY_MS;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n)) {
+        return DEFAULT_SUB_429_RETRY_MS;
+    }
+    return Math.max(0, n);
+}
+
+function subLangsRaw(): string {
+    const env = process.env.YT_TRANSCRIPT_SUB_LANGS?.trim();
+    return env && env.length > 0 ? env : DEFAULT_SUB_LANGS;
+}
+
+/**
+ * Builds one `--sub-langs` value per attempt: each positive language is tried separately
+ * (with exclusions like `-live_chat` appended every time) to reduce burst 429s. If the list
+ * contains `all`, returns a single combined value — sequentializing `all` is meaningless.
+ * Exported for unit tests.
+ */
+export function buildSequentialSubLangAttempts(rawList: string): string[] {
+    const tokens = rawList
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    const exclusions = tokens.filter((t) => t.startsWith('-'));
+    const positives = tokens.filter((t) => !t.startsWith('-'));
+
+    if (positives.length === 0) {
+        return [rawList.trim()];
+    }
+    if (positives.includes('all')) {
+        return [tokens.join(',')];
+    }
+
+    return positives.map((p) => (exclusions.length > 0 ? [p, ...exclusions].join(',') : p));
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimited(message: string): boolean {
+    return /\b429\b/.test(message) || /Too Many Requests/i.test(message);
+}
+
+function combineExecError(e: unknown): string {
+    let message = e instanceof Error ? e.message : String(e);
+    if (typeof e === 'object' && e !== null && 'stderr' in e) {
+        const stderr = (e as { stderr?: unknown }).stderr;
+        if (typeof stderr === 'string' && stderr.trim().length > 0) {
+            message = `${message}\n${stderr}`;
+        }
+    }
+    return message;
+}
+
+async function runYtDlpSubtitleAttempt(
+    args: string[],
+    cwd: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+    try {
+        await runCmd(YT_DLP, args, { cwd });
+        return { ok: true };
+    } catch (e: unknown) {
+        const message = combineExecError(e);
+        debugYtDlpAttempt('subtitle download attempt failed: %s', message);
+        if (process.env.YT_TRANSCRIPT_DEBUG) {
+            console.error(`[yt-transcript] yt-dlp: ${message}`);
+        }
+        return { ok: false, message };
+    }
 }
 
 export type VideoInfo = {
@@ -71,64 +151,68 @@ export type SubtitleAttempt = {
     files: string[];
 };
 
-async function tryRunYtDlp(args: string[], cwd: string): Promise<boolean> {
-    try {
-        await runCmd(YT_DLP, args, { cwd });
-        return true;
-    } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        debugYtDlpAttempt('subtitle download attempt failed: %s', msg);
-        if (process.env.YT_TRANSCRIPT_DEBUG) {
-            console.error(`[yt-transcript] yt-dlp: ${msg}`);
+async function downloadSubsWithWriter(
+    url: string,
+    workDir: string,
+    writerFlag: '--write-subs' | '--write-auto-subs',
+    subDirSegment: string,
+    kind: 'manual' | 'auto'
+): Promise<SubtitleAttempt> {
+    const subDir = path.join(workDir, subDirSegment);
+    await mkdir(subDir, { recursive: true });
+
+    const attempts = buildSequentialSubLangAttempts(subLangsRaw());
+    const retryMs = parseSub429RetryMs(process.env.YT_TRANSCRIPT_SUB_429_RETRY_MS);
+
+    for (const subLangs of attempts) {
+        let rateLimitRetries = 0;
+        while (true) {
+            const result = await runYtDlpSubtitleAttempt(
+                [
+                    '--skip-download',
+                    '--no-warnings',
+                    writerFlag,
+                    '--sub-format',
+                    'vtt',
+                    '--sub-langs',
+                    subLangs,
+                    '-o',
+                    path.join(subDir, '%(id)s.%(language)s'),
+                    url
+                ],
+                workDir
+            );
+
+            const files = await listVttFiles(subDir);
+            if (files.length > 0) {
+                return { kind, files };
+            }
+
+            if (result.ok) {
+                break;
+            }
+
+            if (rateLimitRetries === 0 && isRateLimited(result.message)) {
+                rateLimitRetries++;
+                if (retryMs > 0) {
+                    await sleep(retryMs);
+                }
+                continue;
+            }
+            break;
         }
-        return false;
     }
+
+    const files = await listVttFiles(subDir);
+    return { kind, files };
 }
 
 export async function downloadManualSubs(url: string, workDir: string): Promise<SubtitleAttempt> {
-    const subDir = path.join(workDir, 'manual-subs');
-    await mkdir(subDir, { recursive: true });
-    await tryRunYtDlp(
-        [
-            '--skip-download',
-            '--no-warnings',
-            '--write-subs',
-            '--sub-format',
-            'vtt',
-            '--sub-langs',
-            subLangsArg(),
-            '-o',
-            path.join(subDir, '%(id)s.%(language)s'),
-            url
-        ],
-        workDir
-    );
-
-    const files = await listVttFiles(subDir);
-    return { kind: 'manual', files };
+    return downloadSubsWithWriter(url, workDir, '--write-subs', 'manual-subs', 'manual');
 }
 
 export async function downloadAutoSubs(url: string, workDir: string): Promise<SubtitleAttempt> {
-    const subDir = path.join(workDir, 'auto-subs');
-    await mkdir(subDir, { recursive: true });
-    await tryRunYtDlp(
-        [
-            '--skip-download',
-            '--no-warnings',
-            '--write-auto-subs',
-            '--sub-format',
-            'vtt',
-            '--sub-langs',
-            subLangsArg(),
-            '-o',
-            path.join(subDir, '%(id)s.%(language)s'),
-            url
-        ],
-        workDir
-    );
-
-    const files = await listVttFiles(subDir);
-    return { kind: 'auto', files };
+    return downloadSubsWithWriter(url, workDir, '--write-auto-subs', 'auto-subs', 'auto');
 }
 
 export async function downloadAudio(

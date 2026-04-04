@@ -12,6 +12,7 @@ const yt = vi.hoisted(() => ({
 }));
 
 const wf = vi.hoisted(() => ({
+    assertWhisperCommandResolvable: vi.fn(),
     runWhisperToVtt: vi.fn(),
     loadSegmentsFromVttFile: vi.fn()
 }));
@@ -24,6 +25,7 @@ vi.mock('@/pipeline/ytDlp', () => ({
 }));
 
 vi.mock('@/pipeline/whisperFallback', () => ({
+    assertWhisperCommandResolvable: wf.assertWhisperCommandResolvable,
     runWhisperToVtt: wf.runWhisperToVtt,
     loadSegmentsFromVttFile: wf.loadSegmentsFromVttFile
 }));
@@ -76,6 +78,7 @@ describe('runPipeline', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        wf.assertWhisperCommandResolvable.mockResolvedValue(undefined);
         outDir = await mkdtemp(path.join(os.tmpdir(), 'pipeline-test-'));
         outFile = path.join(outDir, 'out.md');
     });
@@ -263,6 +266,9 @@ epsilon zeta eta theta iota kappa lambda
 
         expect(result.meta.source).toBe('whisper');
         expect(result.segmentCount).toBe(1);
+        expect(wf.assertWhisperCommandResolvable).toHaveBeenCalledWith(
+            'whisper "{{audio}}" --output_dir "{{outdir}}"'
+        );
         expect(yt.downloadAudio).toHaveBeenCalledWith(
             'https://www.youtube.com/watch?v=test',
             expect.any(String),
@@ -294,6 +300,9 @@ epsilon zeta eta theta iota kappa lambda
 
         expect(yt.downloadManualSubs).not.toHaveBeenCalled();
         expect(yt.downloadAutoSubs).not.toHaveBeenCalled();
+        expect(wf.assertWhisperCommandResolvable).toHaveBeenCalledWith(
+            'whisper "{{audio}}" --output_dir "{{outdir}}"'
+        );
         expect(result.meta.source).toBe('whisper');
     });
 

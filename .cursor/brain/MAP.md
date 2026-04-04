@@ -18,6 +18,8 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 
 - Sibling **agent-autoresearch** harness for bounded tasks: `docs/autoresearch-cross-repo-workflow.md` (contract and ledger; no auto-generated patches).
 - In-repo framing of bounded verify/keep loops aligned with that style: `docs/bounded-improvement.md`.
+- Product and debt prioritization (OSS positioning, what to build next): `docs/technical-debt-roadmap.md`.
+- Copy-paste handoff for incident-driven reliability work tied to that roadmap: `docs/reliability-handoff-prompt.md`.
 
 ## File responsibilities
 
@@ -32,7 +34,7 @@ The user supplies a YouTube URL. The agent runs `agent:prepare` via `agentWorkfl
 - `src/summary/summaryContract.ts` — summary shape and validation rules derived from the configured output language
 - `src/summary/transcriptMetrics.ts` — transcript file and body character counts for `manifest.json` context budgeting
 - `src/pipeline/pipeline.ts` — subtitle and Whisper orchestration
-- `src/pipeline/ytDlp.ts` — metadata (`fetchVideoInfo` via `--dump-single-json`: id, title, description) and downloads; `--sub-langs` from `YT_TRANSCRIPT_SUB_LANGS` or a bounded default
+- `src/pipeline/ytDlp.ts` — metadata (`fetchVideoInfo` via `--dump-single-json`: id, title, description) and downloads; `--sub-langs` from `YT_TRANSCRIPT_SUB_LANGS` (sequential one positive language per yt-dlp attempt, shared exclusions; optional 429 retry via `YT_TRANSCRIPT_SUB_429_RETRY_MS`) or a bounded default
 - `src/pipeline/whisperFallback.ts` — Whisper invocation and VTT loading
 - `src/transcript/` — VTT parsing, picking, auto-caption collapse, formatting; `suffixPrefixOverlap.ts` — shared adjacency overlap for collapse + quality metrics; `types.ts` holds transcript metadata types used by manifest and pipeline
 - `fixtures/transcript-quality/` plus `src/transcript/qualityFixtureLoader.ts` / `qualityHarness.ts` — file-based transcript quality corpus, loader, metrics, and acceptance gates for auto-caption cleanup changes

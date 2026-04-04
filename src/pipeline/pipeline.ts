@@ -2,7 +2,11 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { loadSegmentsFromVttFile, runWhisperToVtt } from '@/pipeline/whisperFallback';
+import {
+    assertWhisperCommandResolvable,
+    loadSegmentsFromVttFile,
+    runWhisperToVtt
+} from '@/pipeline/whisperFallback';
 import {
     downloadAudio,
     downloadAutoSubs,
@@ -126,6 +130,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
                     : fromSubs.segments;
             meta = { ...fromSubs.meta, ...metaFromVideoInfo(info) };
         } else {
+            await assertWhisperCommandResolvable(whisperCommand);
             const whisperDir = path.join(workDir, 'whisper-out');
             await mkdir(whisperDir, { recursive: true });
             const audioPath = await downloadAudio(url, workDir, info.id, options.audioFormat);

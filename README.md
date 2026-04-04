@@ -40,6 +40,18 @@ artifacts/videos/<videoId>/
 
 Default output language is Russian, so the default summary file is `summary.ru.md`.
 
+### Defaults and environment (quick reference)
+
+| Variable / flag                               | Role                                                                                                                                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transcript **`md`** (default) vs **`txt`**    | CLI: `--format md` or `--format txt`.                                                                                                                                                           |
+| `YT_TRANSCRIPT_SUB_LANGS`                     | Comma list for yt-dlp `--sub-langs` (default a short set; avoid `all` unless you accept 429 risk). Fetched **one language at a time** with exclusions (e.g. `-live_chat`) appended per attempt. |
+| `YT_TRANSCRIPT_SUB_429_RETRY_MS`              | Wait time before **one retry** of the same language after HTTP **429** (default `3500`; `0` = retry immediately, no sleep). Invalid or non-numeric values fall back to `3500`.                  |
+| `YT_SUMMARY_LANG` / `--reply-lang`            | Summary preset (`ru`, `en`). CLI overrides env.                                                                                                                                                 |
+| `YT_SUMMARY_CMD` / `--summary-cmd`            | Optional shell for `agent:complete` (local summarizer).                                                                                                                                         |
+| `YT_TRANSCRIPT_WHISPER_CMD` / `--whisper-cmd` | Whisper fallback template (`{{audio}}`, `{{outdir}}`). **Preflight**: first token checked on PATH (or path exists) before audio download when Whisper is needed.                                |
+| `manifest.json`                               | Read **`transcriptFileChars`**, **`transcriptBodyChars`**, **`videoDescription`** for context sizing and links from the video page.                                                             |
+
 ### CLI only
 
 ```bash
@@ -135,7 +147,8 @@ Environment:
 
 - `YT_SUMMARY_LANG` — summary output preset: `ru` (default) or `en`. Overridden by `--reply-lang` on `agent:prepare` / `agent:check-summary` / `agent:complete`.
 - `YT_SUMMARY_CMD` — optional shell template for `agent:complete` (see **Agent workflow** above). Overridden by `--summary-cmd` for that run.
-- `YT_TRANSCRIPT_SUB_LANGS` — comma-separated `--sub-langs` for yt-dlp manual/auto captions (default: `en,en-US,en-orig,ru,uk,-live_chat`). Avoid `all` unless you accept many requests and possible HTTP 429 from YouTube. Upgrading from **1.0.x**: if you relied on every language being fetched, set this explicitly (e.g. `all,-live_chat`).
+- `YT_TRANSCRIPT_SUB_LANGS` — comma-separated `--sub-langs` for yt-dlp manual and auto captions (default: `en,en-US,en-orig,ru,uk,-live_chat`). Positive languages are fetched **one at a time** (exclusions like `-live_chat` apply each attempt) to reduce burst 429s; `all` stays one combined request. Avoid `all` unless you accept many requests and higher 429 risk. Upgrading from **1.0.x**: if you relied on every language in one shot, set this explicitly (e.g. `all,-live_chat`).
+- `YT_TRANSCRIPT_SUB_429_RETRY_MS` — milliseconds to wait before **one retry** of the same subtitle language after HTTP **429** (default `3500`; `0` means retry immediately without sleeping).
 - `YT_TRANSCRIPT_WHISPER_CMD` — default Whisper shell template
 - `YT_TRANSCRIPT_DEBUG` — log yt-dlp subtitle attempt failures to stderr (prefixed with `[yt-transcript]`)
 - `NODE_DEBUG=yt-transcript:ytdlp` — same subtitle-attempt messages via Node `debuglog` (stderr)

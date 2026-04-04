@@ -46,6 +46,7 @@ These are assets, not debt. Protect them.
 - OSS contributor baseline: `LICENSE` (MIT), `CONTRIBUTING.md`, GitHub Actions CI (`.github/workflows/ci.yml`), issue templates, `docs/troubleshooting.md`
 - Runtime summary language: `YT_SUMMARY_LANG`, `--reply-lang`, presets `ru` / `en` in `src/summary/outputLanguage.ts`
 - Optional **`agent:complete`** loop: prepare + `YT_SUMMARY_CMD` + validation (`--prepare-only` without a model)
+- Prepare-path resilience: **sequential** yt-dlp `--sub-langs` (one positive language per attempt; `all` stays one request), **one 429 retry** per language (`YT_TRANSCRIPT_SUB_429_RETRY_MS`), **Whisper preflight** before audio when the Whisper fallback runs (`src/pipeline/ytDlp.ts`, `src/pipeline/whisperFallback.ts`; README **Defaults and environment** table)
 
 ## Reliability handoff (YouTube 429, Whisper, description)
 
@@ -53,8 +54,8 @@ Real-world run: default multi-language subtitle fetch hit **HTTP 429**, then **W
 
 - **Prompt for another model / planner** (incident + roadmap alignment): [`docs/reliability-handoff-prompt.md`](./reliability-handoff-prompt.md)
 - **Implemented:** `fetchVideoInfo` uses `yt-dlp --dump-single-json` so the **video description** is available in `transcript.md` front matter (`description`) and in `manifest.json` as **`videoDescription`** (links and notes from the YouTube page).
-- **Still open (code / UX hardening):** sequential subtitle language attempts / retry on 429, clearer errors when Whisper is missing **before** audio download. Operational mitigations: `docs/troubleshooting.md`.
-- **Priority:** same **P0** class as one-command UX below — without this, “URL → prepare” still fails opaque for chat/agent users.
+- **Implemented:** sequential subtitle fetches, 429 retry backoff, and Whisper preflight (see **What Is Already Strong** and `docs/troubleshooting.md`).
+- **Still open (UX):** clearer, in-CLI hints when **`agent:complete`** or **summary validation** fails (e.g. suggested env flags), beyond static docs.
 
 ## Competitive Reality
 
@@ -174,9 +175,8 @@ Current state:
 Remaining gap:
 
 - “Batteries included” summarization for users who will not wire `YT_SUMMARY_CMD`
-- smarter retry guidance (e.g. suggested env tweaks) beyond printing validator errors
-- one **README quick-reference** row/table: default transcript format (`md` / `txt`), `YT_TRANSCRIPT_SUB_LANGS`, `YT_SUMMARY_LANG` / `--reply-lang`, and “read `manifest.json` for context sizing” — so the golden path is not scattered across rules only
-- **Pipeline reliability** in lockstep with this: see **Reliability handoff** (429, Whisper preflight)
+- smarter **in-flow** guidance when validation or `agent:complete` fails (not only README / troubleshooting)
+- more **README recipes** for real `YT_SUMMARY_CMD` patterns (quick-reference table for env defaults is already in README)
 
 Non-goal:
 
@@ -359,13 +359,14 @@ Goals:
 
 Work items:
 
-1. Improve one-command UX (guided defaults, clearer failures) on top of `agent:complete`
-2. Harden subtitle path: mitigate **HTTP 429** (sequential langs / retry) and **Whisper missing** (early, actionable error before audio work)
-3. Add optional output modes beyond the strict handoff summary:
+1. Improve one-command UX (guided defaults, clearer **in-CLI** failures) on top of `agent:complete`
+2. Add optional output modes beyond the strict handoff summary:
     - handoff
     - short summary
     - outline
-4. Improve README examples around common usage patterns (including real `YT_SUMMARY_CMD` recipes) and the **defaults / env** quick reference above
+3. Expand README with **usage recipes** (especially `YT_SUMMARY_CMD` examples); env / manifest quick reference is already shipped
+
+_(Prepare path: sequential `--sub-langs`, 429 retry, Whisper preflight, and the README env table are complete.)_
 
 Why:
 
@@ -412,16 +413,16 @@ Guardrails:
 
 ## Priority Table
 
-| Item                        | Priority | Why now                                | Why not later                                 |
-| --------------------------- | -------- | -------------------------------------- | --------------------------------------------- |
-| One-command UX polish       | P0       | Biggest UX gap for lay users           | Core loop exists via `agent:complete`         |
-| Subtitle 429 + Whisper UX   | P0       | Same story as prepare; opaque failures | Blocks trust before summarization even starts |
-| README defaults / env table | P0       | Cuts setup archaeology                 | Easy win; agents and humans both benefit      |
-| Expand fixture corpus       | P1       | Protects cleanup quality               | Needed before wider usage                     |
-| External benchmark set      | P1       | Makes strategy measurable              | Prevents intuition-only decisions             |
-| Batch mode                  | P2       | Useful, but not core yet               | Can wait until single-video UX is solid       |
-| Search / archive workflows  | P2       | Promising adjacent category            | Too early and too broad                       |
-| UI / extension              | P2       | Big adoption upside                    | Too distracting right now                     |
+| Item                       | Priority | Why now                      | Why not later                           |
+| -------------------------- | -------- | ---------------------------- | --------------------------------------- |
+| One-command UX polish      | P0       | Biggest UX gap for lay users | Core loop exists via `agent:complete`   |
+| Expand fixture corpus      | P1       | Protects cleanup quality     | Needed before wider usage               |
+| External benchmark set     | P1       | Makes strategy measurable    | Prevents intuition-only decisions       |
+| Batch mode                 | P2       | Useful, but not core yet     | Can wait until single-video UX is solid |
+| Search / archive workflows | P2       | Promising adjacent category  | Too early and too broad                 |
+| UI / extension             | P2       | Big adoption upside          | Too distracting right now               |
+
+**Resolved (removed from table above):** subtitle 429 / sequential langs + Whisper preflight + README env quick-reference table (+ troubleshooting updates).
 
 ## Definition Of “Good Next Version”
 
@@ -435,7 +436,7 @@ The next strong milestone should satisfy all of the following:
 
 If only a few things get built next, choose these:
 
-1. One-command UX polish (beyond `agent:complete` + `YT_SUMMARY_CMD`) **including** README defaults/env table and **subtitle 429 + Whisper preflight** (see Priority Table)
+1. One-command UX polish (clearer failures, optional non-shell summarizer path) — prepare-path hardening and README env table are **done**
 2. Expanded quality fixture corpus
 3. External benchmark set
 
