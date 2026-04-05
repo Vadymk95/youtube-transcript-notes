@@ -23,7 +23,8 @@ npm install
 3. Open the repo in **Cursor** or **Claude Code**.
 4. Paste a YouTube URL in chat and ask for notes, a summary, or a plan.
 5. The intended local workflow is:
-    - run `npm run agent:prepare -- "<url>"`
+
+- run `npm run agent:prepare -- "<url>"`
     - read `manifest.json` and `summary-prompt.md`
     - write the final summary artifact
     - validate it with `npm run agent:check-summary -- "<summary-file>"`
@@ -48,7 +49,7 @@ Default output language is Russian, so the default summary file is `summary.ru.m
 | `YT_TRANSCRIPT_SUB_LANGS`                         | Comma list for yt-dlp `--sub-langs` (default a short set; avoid `all` unless you accept 429 risk). Fetched **one language at a time** with exclusions (e.g. `-live_chat`) appended per attempt.                                                                                      |
 | `YT_TRANSCRIPT_SUB_429_RETRY_MS`                  | Wait time before **one retry** of the same language after HTTP **429** (default `3500`; `0` = retry immediately, no sleep). Invalid or non-numeric values fall back to `3500`.                                                                                                       |
 | `YT_SUMMARY_LANG` / `--reply-lang`                | Summary preset (`ru`, `en`). CLI overrides env.                                                                                                                                                                                                                                      |
-| `YT_SUMMARY_CMD` / `--summary-cmd`                | Optional shell for `agent:complete` (local summarizer).                                                                                                                                                                                                                              |
+| `YT_SUMMARY_CMD` / `--summary-cmd`                | Optional shell for `agent:complete` (headless / CI; primary path is the editor agent after `agent:prepare`).                                                                                                                                                                         |
 | `YT_TRANSCRIPT_WHISPER_CMD` / `--whisper-cmd`     | Whisper fallback template (`{{audio}}`, `{{outdir}}`). Values are **POSIX-quoted** for `sh -c` — use **bare** placeholders in the template (no extra `"..."` around them). **Preflight**: first token checked on PATH (or path exists) before audio download when Whisper is needed. |
 | `YT_TRANSCRIPT_ALLOW_ANY_URL` / `--allow-any-url` | Skip YouTube-only hostname allowlist on transcript/agent CLIs (non-YouTube extractors). Video id is still validated after metadata fetch.                                                                                                                                            |
 | `manifest.json`                                   | Read **`transcriptFileChars`**, **`transcriptBodyChars`**, **`videoDescription`** for context sizing and links from the video page.                                                                                                                                                  |
@@ -108,14 +109,14 @@ node dist/cli/transcriptCli.js "<url>" -o ./notes.md
 npm run agent:prepare -- "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-**End-to-end with a local summarizer** (prepare → your command writes `summary.<lang>.md` → validate):
+**Optional: end-to-end with a shell** (prepare → your command writes `summary.<lang>.md` → validate). For **Cursor and similar editors**, the usual path is `agent:prepare` and then the **chat agent** writes the summary from `summary-prompt.md`, not this hook.
 
 ```bash
-export YT_SUMMARY_CMD='cat {{SUMMARY_PROMPT_PATH}} | your-llm-cli > {{SUMMARY_OUT_PATH}}'
+export YT_SUMMARY_CMD='cat {{SUMMARY_PROMPT_PATH}} | your-cli > {{SUMMARY_OUT_PATH}}'
 npm run agent:complete -- "https://www.youtube.com/watch?v=VIDEO_ID" --reply-lang ru
 ```
 
-Use `--prepare-only` if you only want transcripts + prompt (no `YT_SUMMARY_CMD`). Placeholders: `{{SUMMARY_PROMPT_PATH}}`, `{{SUMMARY_OUT_PATH}}`, `{{TRANSCRIPT_PATH}}`, `{{VIDEO_ID}}`, `{{MANIFEST_PATH}}`, `{{ARTIFACT_DIR}}` — each is expanded to a **single POSIX-quoted shell word** (do not wrap them in extra `"..."` in your template). The repo does **not** ship a default cloud model; you wire the shell (Ollama, local CLI, etc.). Optional `--attempts 2` retries the command when validation fails (non-deterministic models).
+Use `--prepare-only` if you only want transcripts + prompt (no `YT_SUMMARY_CMD`). Placeholders: `{{SUMMARY_PROMPT_PATH}}`, `{{SUMMARY_OUT_PATH}}`, `{{TRANSCRIPT_PATH}}`, `{{VIDEO_ID}}`, `{{MANIFEST_PATH}}`, `{{ARTIFACT_DIR}}` — each is expanded to a **single POSIX-quoted shell word** (do not wrap them in extra `"..."` in your template). Optional `--attempts 2` retries the command when validation fails (non-deterministic generators).
 
 **`YT_SUMMARY_CMD` recipe shapes** (adapt names/flags to your tool): pipe prompt into any stdin CLI → `cat {{SUMMARY_PROMPT_PATH}} | your-cli > {{SUMMARY_OUT_PATH}}`; file arguments → `your-cli -i {{SUMMARY_PROMPT_PATH}} -o {{SUMMARY_OUT_PATH}}`; run a small script → `node ./scripts/summarize.mjs {{SUMMARY_PROMPT_PATH}} {{SUMMARY_OUT_PATH}}`. On failure, `agent:complete` and `agent:check-summary` print **hint blocks** on stderr after the JSON (preset, re-check command, links to the prompt template).
 
