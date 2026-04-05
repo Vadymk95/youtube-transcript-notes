@@ -1,0 +1,18 @@
+{
+    "id": "cyrillic-prefix-chain",
+    "description": "Collapses a rolling prefix chain written in Cyrillic (same pattern as auto-generated YouTube captions).",
+    "language": "ru",
+    "tags": ["protected", "synthetic", "prefix-chain", "cyrillic"],
+    "sourceKind": "synthetic",
+    "segments": [
+        { "startSec": 0, "endSec": 1, "text": "Сегодня мы" },
+        { "startSec": 0.5, "endSec": 2, "text": "Сегодня мы обсуждаем" },
+        { "startSec": 1, "endSec": 3, "text": "Сегодня мы обсуждаем проект." }
+    ],
+    "requiredPhrases": ["Сегодня мы обсуждаем проект."],
+    "expectedSegmentCount": 1,
+    "minSegmentReduction": 2,
+    "maxAdjacentOverlapPairs": 0,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 8
+}

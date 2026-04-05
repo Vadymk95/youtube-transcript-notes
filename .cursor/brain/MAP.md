@@ -14,7 +14,7 @@
 
 ### Transcript quality evaluation
 
-`fixtures/transcript-quality/` stores the transcript quality corpus with language/tag metadata. `src/transcript/qualityFixtureLoader.ts` loads and validates that corpus, `src/transcript/qualityHarness.ts` computes metrics and acceptance checks over the current `collapseRollingAutoCaptions()` behavior (overlap/prefix metrics use `suffixPrefixOverlap.ts`), and `src/cli/transcriptQualityCli.ts` exposes this as `npm run eval:transcript-quality`. `npm run ci` runs this harness after tests and build so caption-cleanup regressions fail CI.
+`fixtures/transcript-quality/` stores the transcript quality corpus with language/tag metadata (English protected synthetics, Cyrillic mirrors for prefix-chain + sentence-boundary, and a small real-world YouTube auto excerpt). `src/transcript/qualityFixtureLoader.ts` loads and validates that corpus, `src/transcript/qualityHarness.ts` computes metrics and acceptance checks over the current `collapseRollingAutoCaptions()` behavior (overlap/prefix metrics use `suffixPrefixOverlap.ts`), and `src/cli/transcriptQualityCli.ts` exposes this as `npm run eval:transcript-quality`. `npm run ci` runs this harness after tests and build so caption-cleanup regressions fail CI.
 
 ## Optional process docs (cross-repo and in-repo rhythm)
 

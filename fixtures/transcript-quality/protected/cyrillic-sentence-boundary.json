@@ -1,0 +1,23 @@
+{
+    "id": "cyrillic-sentence-boundary",
+    "description": "Keeps a repeated full sentence in Russian when the next cue extends it (sentence boundary guard).",
+    "language": "ru",
+    "tags": ["protected", "synthetic", "sentence-boundary", "cyrillic"],
+    "sourceKind": "synthetic",
+    "segments": [
+        { "startSec": 0, "endSec": 2, "text": "Это законченное предложение." },
+        {
+            "startSec": 1.8,
+            "endSec": 4,
+            "text": "Это законченное предложение про планы на квартал."
+        }
+    ],
+    "requiredPhrases": [
+        "Это законченное предложение.",
+        "Это законченное предложение про планы на квартал."
+    ],
+    "expectedSegmentCount": 2,
+    "maxAdjacentOverlapPairs": 1,
+    "maxAdjacentPrefixPairs": 0,
+    "maxSegmentWords": 12
+}
