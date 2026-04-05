@@ -217,6 +217,8 @@ npm run eval:transcript-quality -- --json --compact
 
 The harness evaluates the current `collapseRollingAutoCaptions()` behavior against a file-based fixture corpus under `fixtures/transcript-quality/`. A candidate should be rejected if any protected fixture regresses or if overlap / segment quality gates fail. Keep changes only when the fixture checks pass and the normal repo verification (`npm run ci`) stays green.
 
+Optional **network** benchmark (yt-dlp vs this CLI vs ad-hoc npm tools): [docs/transcript-external-benchmark.md](docs/transcript-external-benchmark.md) and [`fixtures/benchmark-videos/manifest.json`](fixtures/benchmark-videos/manifest.json).
+
 **Git hooks (Husky):**
 
 - **pre-commit** — `lint-staged`: ESLint `--fix` + `--max-warnings 0` and Prettier on staged `src/**/*.ts` and selected config/docs.

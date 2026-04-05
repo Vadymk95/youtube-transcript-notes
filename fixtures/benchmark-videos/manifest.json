@@ -1,0 +1,13 @@
+{
+    "version": 1,
+    "description": "Curated YouTube video IDs for optional maintainer network benchmarks. Not executed in CI. See docs/transcript-external-benchmark.md.",
+    "notRunInCi": true,
+    "videos": [
+        {
+            "videoId": "jNQXAC9IVRw",
+            "slug": "me-at-the-zoo-smoke",
+            "role": "reachability",
+            "notes": "Very short, long-lived public video. Use to verify yt-dlp + transcript CLI connectivity. Low value for auto-caption stress testing."
+        }
+    ]
+}

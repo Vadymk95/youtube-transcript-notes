@@ -21,6 +21,7 @@
 - Sibling **agent-autoresearch** harness for bounded tasks: `docs/autoresearch-cross-repo-workflow.md` (contract and ledger; no auto-generated patches).
 - In-repo framing of bounded verify/keep loops aligned with that style: `docs/bounded-improvement.md`.
 - Condensed **open backlog** (goal: shrink to zero and delete): `docs/technical-debt-roadmap.md`.
+- **Optional maintainer network benchmark** (not CI): `docs/transcript-external-benchmark.md`, golden IDs `fixtures/benchmark-videos/manifest.json`.
 - Copy-paste handoff for incident-driven reliability work tied to that roadmap: `docs/reliability-handoff-prompt.md`.
 
 ## File responsibilities
