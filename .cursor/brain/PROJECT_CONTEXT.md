@@ -4,6 +4,16 @@
 
 Local-first YouTube transcript pipeline for Cursor and CLI workflows.
 
+## Why this exists (product intent)
+
+**Problem:** Long-form tech video is a slow way to learn what changed. The goal is to **extract signal fast** — new facts, ideas, and product updates — without committing to watch every minute.
+
+**Outcome:** A **reproducible transcript** (local pipeline, not title-guessing) becomes a **structured, validated summary** (`summary.<replyLanguage>.md`) that is dense enough to act as a **handoff artifact**.
+
+**Second hop:** That summary is meant for **the next step** — another model, a teammate, or your own follow-up prompt (e.g. “does this apply to our current setup?”). The repo optimizes for **clarity and contract shape** so the next reader (human or LLM) understands **what the video was about** without opening YouTube again.
+
+**Scope:** Default integration is **Cursor chat + local tools**; optional hosting, shared auth, or a remote API wrapper are **out of core** unless explicitly adopted — they do not change the canonical URL → transcript → summary → `agent:check-summary` path.
+
 Primary user experience:
 
 1. Open this repo in Cursor.

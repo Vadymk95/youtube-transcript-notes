@@ -2,6 +2,10 @@
 
 Small **Node.js + TypeScript CLI** for turning a **YouTube URL** into a transcript, plus an **agent-friendly workflow** for Cursor or Claude Code chats where you paste a YouTube link and get a ready-to-use summary artifact bundle.
 
+## Why this exists
+
+**Intent:** Turn long tech video into **fast, trustworthy signal** — updates, facts, and ideas — without watching the full runtime. The pipeline produces a **structured summary** grounded in a **local transcript**, validated by `agent:check-summary`, so you can **hand the file to another LLM or a human** for the next step (e.g. “is this relevant to our stack?”). **Local-first** extraction is the trust anchor; optional SaaS or hosted APIs are a separate layer, not the core idea.
+
 ## Quick start
 
 ### Cursor / Claude Code

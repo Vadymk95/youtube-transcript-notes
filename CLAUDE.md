@@ -11,6 +11,8 @@ Decisions: `.cursor/brain/DECISIONS.md`
 
 This repository is a local-first YouTube transcript and summary workflow.
 
+**Why:** Ship **dense, structured summaries** from tech video so you can **decide what matters** without watching everything end-to-end, and **reuse the summary** as input to another model or workflow (relevance checks, planning). Transcript comes from the **local pipeline**; the summary file is the **validated handoff**.
+
 Canonical chat UX:
 
 1. User sends a YouTube URL.
