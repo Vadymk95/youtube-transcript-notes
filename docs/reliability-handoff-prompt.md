@@ -4,7 +4,7 @@ Copy the block below into a chat with a coding agent or planner. It states real 
 
 ---
 
-You are working on the **youtube-transcript-notes** repository: a **local-first** pipeline that turns a YouTube URL into `transcript.md`, `summary-prompt.md`, and `manifest.json` under `artifacts/videos/<videoId>/`, using **yt-dlp** (subtitles first, optional **Whisper** on audio if subtitles fail).
+You are working on the **youtube-transcript-notes** repository: a **local-first** pipeline that turns a YouTube URL into `transcript.md`, `summary-prompt.md`, `manifest.json`, and `cursor-handoff.md` under `artifacts/videos/<videoId>/`, using **yt-dlp** (subtitles first, optional **Whisper** on audio if subtitles fail).
 
 ## What actually went wrong (observed)
 

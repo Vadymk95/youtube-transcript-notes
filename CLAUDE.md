@@ -44,9 +44,11 @@ artifacts/videos/<videoId>/
   summary-prompt.md
   summary.<replyLanguage>.md
   manifest.json
+  cursor-handoff.md
 ```
 
-- `manifest.json` is the machine-friendly entrypoint (includes `videoDescription` from YouTube when present).
+- `manifest.json` is the machine-friendly entrypoint (includes `videoDescription` from YouTube when present, alignment metrics + `videoDescriptionAlignmentPolicy`, and `cursorHandoffPath`). Tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`.
+- `cursor-handoff.md` is a guided Cursor checklist (paths + `agent:check-summary` hint); not validated as the summary output.
 - `summary-prompt.md` is the primary source for the final answer.
 - `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 - `transcript.md` is the raw fallback source.

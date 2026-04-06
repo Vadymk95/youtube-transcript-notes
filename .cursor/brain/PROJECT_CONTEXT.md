@@ -24,7 +24,7 @@ Primary user experience:
 
 ## Canonical Workflow
 
-The repo has one canonical agent flow: `agent:prepare` writes `transcript.md`, `summary-prompt.md`, and `manifest.json` under `artifacts/videos/<videoId>/`. The agent (chat step) writes `summary.<replyLanguage>.md`, then runs `agent:check-summary` until it passes, and replies using that summary in the configured output language.
+The repo has one canonical agent flow: `agent:prepare` writes `transcript.md`, `summary-prompt.md`, `manifest.json`, and `cursor-handoff.md` (guided checklist for Cursor chat paths + validator command) under `artifacts/videos/<videoId>/`. The agent (chat step) writes `summary.<replyLanguage>.md`, then runs `agent:check-summary` until it passes, and replies using that summary in the configured output language.
 
 Do not introduce an alternative default path through an external MCP, remote API, or direct prompt-only summarization unless the user explicitly asks for that architecture.
 
@@ -35,7 +35,8 @@ Per video, the workflow writes:
 - `transcript.md` — timestamped transcript, source of truth for raw content
 - `summary-prompt.md` — model-ready prompt assembled from the transcript
 - `summary.<replyLanguage>.md` — final structured handoff summary (default: `summary.ru.md`)
-- `manifest.json` — machine-friendly pointers and metadata for the agent (includes `videoDescription` when fetched from YouTube)
+- `manifest.json` — machine-friendly pointers and metadata for the agent (includes `videoDescription`, lexical alignment + `videoDescriptionAlignmentPolicy`, and `cursorHandoffPath`; YAML omission tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`)
+- `cursor-handoff.md` — optional UX: copy-paste steps and absolute paths for Cursor (does not replace the summary file)
 
 The final summary must be validated before the workflow is considered complete.
 

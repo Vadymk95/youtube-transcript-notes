@@ -7,6 +7,7 @@ import { runPipeline } from '@/pipeline/pipeline';
 import { DEFAULT_WHISPER_CMD } from '@/pipeline/whisperFallback';
 import { fetchVideoInfo } from '@/pipeline/ytDlp';
 import { assertYoutubeWatchUrl } from '@/shared/youtubeUrlPolicy';
+import { descriptionAlignmentPatchFromCli } from '@/transcript/descriptionAlignmentConfig';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes — YouTube URL → transcript file
@@ -24,6 +25,10 @@ Options:
   --whisper-cmd <shell>   Override whisper command; use {{audio}} and {{outdir}}
   --keep-tmp              Keep temp work directory (prints path on stderr)
   --allow-any-url         Skip YouTube-only URL allowlist (non-YouTube extractors; still validates video id)
+  --desc-align-policy <h>  heuristic | always_include (overrides YT_TRANSCRIPT_DESC_ALIGN_POLICY)
+  --desc-align-min-overlap <n>  (0,1] — min token overlap to keep YAML description
+  --desc-align-min-tokens <n>   min contentful description tokens before judging misalignment
+  --desc-align-min-chars <n>    min description length before judging misalignment
   -h, --help              Show help
 
 Environment:
@@ -31,6 +36,7 @@ Environment:
   YT_TRANSCRIPT_WHISPER_CMD   Default whisper shell command
   YT_TRANSCRIPT_DEBUG     Print yt-dlp failures to stderr
   YT_TRANSCRIPT_ALLOW_ANY_URL   Set to 1/true to skip YouTube hostname allowlist (same as --allow-any-url)
+  YT_TRANSCRIPT_DESC_ALIGN_*   Description vs transcript YAML tuning (see README)
 
 Whisper must be installed separately (e.g. pip install openai-whisper).
 Default command expects the \`whisper\` CLI on PATH.
@@ -49,6 +55,10 @@ async function main(): Promise<void> {
             'whisper-cmd': { type: 'string' },
             'keep-tmp': { type: 'boolean', default: false },
             'allow-any-url': { type: 'boolean', default: false },
+            'desc-align-policy': { type: 'string' },
+            'desc-align-min-overlap': { type: 'string' },
+            'desc-align-min-tokens': { type: 'string' },
+            'desc-align-min-chars': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -88,6 +98,19 @@ async function main(): Promise<void> {
 
     const whisperCommand = values['whisper-cmd'] ?? DEFAULT_WHISPER_CMD;
 
+    let descAlignPatch;
+    try {
+        descAlignPatch = descriptionAlignmentPatchFromCli({
+            'desc-align-policy': values['desc-align-policy'],
+            'desc-align-min-overlap': values['desc-align-min-overlap'],
+            'desc-align-min-tokens': values['desc-align-min-tokens'],
+            'desc-align-min-chars': values['desc-align-min-chars']
+        });
+    } catch (e: unknown) {
+        console.error(e instanceof Error ? e.message : e);
+        process.exit(1);
+    }
+
     const result = await runPipeline({
         url,
         videoInfo: info,
@@ -97,7 +120,8 @@ async function main(): Promise<void> {
         minSubtitleChars: minChars,
         audioFormat: values['audio-format'],
         whisperCommand,
-        keepWorkDir: values['keep-tmp']
+        keepWorkDir: values['keep-tmp'],
+        descriptionAlignment: descAlignPatch
     });
 
     if (values['keep-tmp'] && result.workDir) {

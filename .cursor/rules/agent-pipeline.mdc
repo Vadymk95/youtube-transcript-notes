@@ -20,13 +20,14 @@ Before implementation:
 When the user provides a YouTube URL and asks for a transcript, notes, summary, or plan:
 
 1. Run `npm run agent:prepare -- "<url>"` from the repo root (or `npm run agent:complete -- "<url>"` when the user has configured `YT_SUMMARY_CMD` / `--summary-cmd` and wants validation in one step).
-2. Read `manifest.json`.
-3. Read `summary-prompt.md`.
-4. Write the final handoff summary to `summary.<replyLanguage>.md` (default: `summary.ru.md`).
-5. Run `npm run agent:check-summary -- "<summary-file>"` (add `--reply-lang` if `manifest.json` `replyLanguage` is not `ru`).
-6. If validation fails, rewrite the summary and run the check again.
-7. Read `transcript.md` only if deeper validation is needed.
-8. Return the final answer in the configured reply language.
+2. Optionally read `cursor-handoff.md` in the same artifact folder for absolute paths and a ready-made `agent:check-summary` line (no `YT_SUMMARY_CMD` needed for the Cursor path).
+3. Read `manifest.json`.
+4. Read `summary-prompt.md`.
+5. Write the final handoff summary to `summary.<replyLanguage>.md` (default: `summary.ru.md`).
+6. Run `npm run agent:check-summary -- "<summary-file>"` (add `--reply-lang` if `manifest.json` `replyLanguage` is not `ru`).
+7. If validation fails, rewrite the summary and run the check again.
+8. Read `transcript.md` only if deeper validation is needed.
+9. Return the final answer in the configured reply language.
 
 Hard rules:
 

@@ -25,6 +25,7 @@ npm install
 5. The intended local workflow is:
 
 - run `npm run agent:prepare -- "<url>"`
+    - optionally open `cursor-handoff.md` for absolute paths + a copy-paste `agent:check-summary` line
     - read `manifest.json` and `summary-prompt.md`
     - write the final summary artifact
     - validate it with `npm run agent:check-summary -- "<summary-file>"`
@@ -37,22 +38,24 @@ artifacts/videos/<videoId>/
   summary-prompt.md
   summary.<replyLanguage>.md
   manifest.json
+  cursor-handoff.md
 ```
 
 Default output language is Russian, so the default summary file is `summary.ru.md`.
 
 ### Defaults and environment (quick reference)
 
-| Variable / flag                                   | Role                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Transcript **`md`** (default) vs **`txt`**        | CLI: `--format md` or `--format txt`.                                                                                                                                                                                                                                                |
-| `YT_TRANSCRIPT_SUB_LANGS`                         | Comma list for yt-dlp `--sub-langs` (default a short set; avoid `all` unless you accept 429 risk). Fetched **one language at a time** with exclusions (e.g. `-live_chat`) appended per attempt.                                                                                      |
-| `YT_TRANSCRIPT_SUB_429_RETRY_MS`                  | Wait time before **one retry** of the same language after HTTP **429** (default `3500`; `0` = retry immediately, no sleep). Invalid or non-numeric values fall back to `3500`.                                                                                                       |
-| `YT_SUMMARY_LANG` / `--reply-lang`                | Summary preset (`ru`, `en`). CLI overrides env.                                                                                                                                                                                                                                      |
-| `YT_SUMMARY_CMD` / `--summary-cmd`                | Optional shell for `agent:complete` (headless / CI; primary path is the editor agent after `agent:prepare`).                                                                                                                                                                         |
-| `YT_TRANSCRIPT_WHISPER_CMD` / `--whisper-cmd`     | Whisper fallback template (`{{audio}}`, `{{outdir}}`). Values are **POSIX-quoted** for `sh -c` — use **bare** placeholders in the template (no extra `"..."` around them). **Preflight**: first token checked on PATH (or path exists) before audio download when Whisper is needed. |
-| `YT_TRANSCRIPT_ALLOW_ANY_URL` / `--allow-any-url` | Skip YouTube-only hostname allowlist on transcript/agent CLIs (non-YouTube extractors). Video id is still validated after metadata fetch.                                                                                                                                            |
-| `manifest.json`                                   | Read **`transcriptFileChars`**, **`transcriptBodyChars`**, **`videoDescription`** for context sizing and links from the video page.                                                                                                                                                  |
+| Variable / flag                                   | Role                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Transcript **`md`** (default) vs **`txt`**        | CLI: `--format md` or `--format txt`.                                                                                                                                                                                                                                                                                                                                                            |
+| `YT_TRANSCRIPT_SUB_LANGS`                         | Comma list for yt-dlp `--sub-langs` (default a short set; avoid `all` unless you accept 429 risk). Fetched **one language at a time** with exclusions (e.g. `-live_chat`) appended per attempt.                                                                                                                                                                                                  |
+| `YT_TRANSCRIPT_SUB_429_RETRY_MS`                  | Wait time before **one retry** of the same language after HTTP **429** (default `3500`; `0` = retry immediately, no sleep). Invalid or non-numeric values fall back to `3500`.                                                                                                                                                                                                                   |
+| `YT_SUMMARY_LANG` / `--reply-lang`                | Summary preset (`ru`, `en`). CLI overrides env.                                                                                                                                                                                                                                                                                                                                                  |
+| `YT_SUMMARY_CMD` / `--summary-cmd`                | Optional shell for `agent:complete` (headless / CI; primary path is the editor agent after `agent:prepare`).                                                                                                                                                                                                                                                                                     |
+| `YT_TRANSCRIPT_WHISPER_CMD` / `--whisper-cmd`     | Whisper fallback template (`{{audio}}`, `{{outdir}}`). Values are **POSIX-quoted** for `sh -c` — use **bare** placeholders in the template (no extra `"..."` around them). **Preflight**: first token checked on PATH (or path exists) before audio download when Whisper is needed.                                                                                                             |
+| `YT_TRANSCRIPT_ALLOW_ANY_URL` / `--allow-any-url` | Skip YouTube-only hostname allowlist on transcript/agent CLIs (non-YouTube extractors). Video id is still validated after metadata fetch.                                                                                                                                                                                                                                                        |
+| `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`   | Tune YAML **`description`** omission: **`YT_TRANSCRIPT_DESC_ALIGN_POLICY`** (`heuristic` \| `always_include`, aliases `on`/`off`/`include`); **`YT_TRANSCRIPT_DESC_ALIGN_MIN_OVERLAP`** (0–1]; **`YT_TRANSCRIPT_DESC_ALIGN_MIN_TOKENS`**; **`YT_TRANSCRIPT_DESC_ALIGN_MIN_CHARS`**. **`yt-transcript`** and **`agent:prepare`**: **`--desc-align-policy`**, **`--desc-align-min-overlap`**, etc. |
+| `manifest.json`                                   | Read **`transcriptFileChars`**, **`transcriptBodyChars`**, **`videoDescription`**, alignment fields (**`videoDescriptionAlignment`**, **`videoDescriptionAlignmentPolicy`**, overlap/token counts, **`videoDescriptionOmittedFromTranscriptYaml`**), and **`cursorHandoffPath`**.                                                                                                                |
 
 ### CLI only
 
@@ -64,7 +67,7 @@ node dist/cli/transcriptCli.js "<url>" -o ./notes.md
 
 ## What it does
 
-1. Fetches **video metadata** (id, title, **description** from YouTube — links and notes end up in `transcript.md` front matter and `manifest.json` as `videoDescription`).
+1. Fetches **video metadata** (id, title, **description** from YouTube — full text is always in `manifest.json` as `videoDescription`; by default, if lexical overlap with the spoken transcript is very low, the YAML `description` line may be omitted from `transcript.md`. Override with **`YT_TRANSCRIPT_DESC_ALIGN_POLICY=always_include`** or **`--desc-align-policy always_include`**).
 2. Fetches **manual subtitles** with [yt-dlp](https://github.com/yt-dlp/yt-dlp) (WebVTT).
 3. If they are missing or too short, tries **auto-generated** captions.
 4. If that still fails (or you pass `--force-whisper`), downloads **audio** and runs a **local Whisper** command you configure (default expects the `whisper` CLI).
@@ -128,6 +131,7 @@ This command writes a stable artifact bundle for the agent:
 - `artifacts/videos/<videoId>/summary-prompt.md`
 - `artifacts/videos/<videoId>/summary.<replyLanguage>.md`
 - `artifacts/videos/<videoId>/manifest.json`
+- `artifacts/videos/<videoId>/cursor-handoff.md` (guided checklist; optional to open)
 
 It also prints the same paths and metadata as JSON to stdout. The intended flow is:
 

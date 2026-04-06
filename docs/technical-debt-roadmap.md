@@ -6,13 +6,11 @@
 
 ## Backlog (easiest → hardest to implement)
 
-1. **Bundled or guided summarizer** for users who will not write `YT_SUMMARY_CMD` (stay local-first; no remote API as default). _(Product/UX; may wrap or document a default local path.)_
+1. **Optional summary shapes** beyond the strict handoff contract (e.g. short summary, outline) — requires aligned prompt + validator changes. _(Cross-cutting: `prompts/video-notes-prompt.md`, `outputLanguage.ts`, `summaryContract.ts`, tests.)_
 
-2. **Optional summary shapes** beyond the strict handoff contract (e.g. short summary, outline) — requires aligned prompt + validator changes. _(Cross-cutting: `prompts/video-notes-prompt.md`, `outputLanguage.ts`, `summaryContract.ts`, tests.)_
+2. **Batch URLs / playlists** (power-user; watch scraping risk). _(CLI orchestration + policy.)_
 
-3. **Batch URLs / playlists** (power-user; watch scraping risk). _(CLI orchestration + policy.)_
-
-4. **Optional multimodal / key-frame context (exploratory)** — **full-picture** summaries (speech + on-screen UI/slides) without making the core CLI depend on any single LLM vendor; **not started** (weigh pros/cons before coding). **Rationale:** depends on Cursor agent UX, optional contract extensions, and video-on-disk workflow — **not** part of the core transcript/summary moat until the text path is boringly solid.
+3. **Optional multimodal / key-frame context (exploratory)** — **full-picture** summaries (speech + on-screen UI/slides) without making the core CLI depend on any single LLM vendor; **not started** (weigh pros/cons before coding). **Rationale:** depends on Cursor agent UX, optional contract extensions, and video-on-disk workflow — **not** part of the core transcript/summary moat until the text path is boringly solid.
     - **Problem:** transcript-only handoffs miss what is **shown**; analyzing every frame is too expensive.
     - **Preferred orchestration (maintainer / Cursor use case):** keep **vision inside Cursor** — user runs **`agent:prepare`** (or equivalent) so `transcript.md`, `summary-prompt.md`, and **`manifest.json` (code-generated today)** exist; the **Cursor agent** reads the transcript, proposes **high-value timestamps** (demos, settings, slides), runs **`ffmpeg`** via terminal to write stills under e.g. `artifacts/videos/<videoId>/frames/`, then runs a **second multimodal pass** with the **same Cursor model (auto or pinned)** so images land in chat context. **Final summary** merges **transcript + frame observations** (workflow doc / optional prompt template — not mandatory cloud).
     - **Repo responsibility vs IDE:** this repository should stay **deterministic** where possible: optional CLI to **extract frames from a local video + timestamp list** (file or stdin), optional **manifest fields** later (e.g. `framePaths[]`, `visualInterestSec[]`) if we extend the contract; it should **not** try to “call Cursor’s model” from Node. **Epistemic split:** code-generated `manifest.json` stays truthy for paths/metrics; any **LLM-produced** schedule of timestamps should live in a **sibling artifact** (e.g. `frames-plan.json`) or agent thread until we explicitly merge schemas.
@@ -22,11 +20,11 @@
     - **Similar OSS reference:** [`jdmonaco/ytcapture`](https://github.com/jdmonaco/ytcapture) — yt-dlp + ffmpeg, interval frames, transcript-aligned notes (prior art for frame cadence; our artifact contract stays explicit).
     - **Risks / non-goals:** YouTube ToS + disk for video files; variable vision quality; never block core transcript path if video/`ffmpeg` missing — **strictly optional** flags/env and clear skip behavior.
 
-5. **Searchable archive / semantic retrieval workflow.** _(New workflow layer; indexing, storage, retrieval policy.)_
+4. **Searchable archive / semantic retrieval workflow.** _(New workflow layer; indexing, storage, retrieval policy.)_
 
-6. **UI or browser extension.** _(Large product surface; out of band for CLI moat.)_
+5. **UI or browser extension.** _(Large product surface; out of band for CLI moat.)_
 
-7. **Optional claim verification / fact-fetch pass (exploratory)** — treat `summary.<replyLanguage>.md` as **structured handoff**, not **ground truth** for factual news; **not started** (spec + recipe before code).
+6. **Optional claim verification / fact-fetch pass (exploratory)** — treat `summary.<replyLanguage>.md` as **structured handoff**, not **ground truth** for factual news; **not started** (spec + recipe before code).
     - **Problem:** `agent:check-summary` enforces **contract shape** (headings, bullets, hedging rules), not **epistemic correctness**. The transcript and the model can inherit speaker mistakes, rumor, or misread cap tables; users may assume “validator passed” means “true”.
     - **Intent:** An **opt-in** stage (CLI flag, env, or documented agent playbook only at first) that **fetches independent evidence** for a short list of **checkable claims** (deals, dates, policy changes, numbers), then writes results in a **clearly labeled** place so “from video” vs “cross-checked” never blends silently.
     - **Pipeline sketch (Ralph-like, not a second orchestration layer by default):** (1) extract atomic claims from summary + transcript cues; (2) for each claim, **retrieve** primary or high-trust secondary sources (vendor blog, regulator filing, wire story); (3) **reconcile** — match / contradict / unknown; (4) **update artifact** — prefer a dedicated subsection (e.g. under **Пробелы и неоднозначности** / **Gaps and ambiguities**) or a sibling file e.g. `verification.<replyLanguage>.md` referenced from `manifest.json` **only if** we extend the contract; (5) **repeat** until stop rule (max iterations, or “all P0 claims resolved or explicitly flagged”). Agent tooling: **sequential decomposition** (e.g. MCP “think in steps”) for claim lists; **Context7** only where the claim is **library/API/doc-shaped** — it is a weak default for breaking news.
@@ -44,4 +42,4 @@
 
 ---
 
-**Recently shipped (do not re-list above):** sequential `--sub-langs` + 429 retry + Whisper preflight; README env/manifest quick reference; **stderr hint blocks** after failed `agent:complete` / `agent:check-summary` (`src/summary/summaryValidationHints.ts`); **Cyrillic transcript-quality fixtures** (`cyrillic-prefix-chain`, `cyrillic-sentence-boundary`); **transcript external benchmark doc** + `fixtures/benchmark-videos/manifest.json`.
+**Recently shipped (do not re-list above):** sequential `--sub-langs` + 429 retry + Whisper preflight; README env/manifest quick reference; **stderr hint blocks** after failed `agent:complete` / `agent:check-summary` (`src/summary/summaryValidationHints.ts`); **Cyrillic transcript-quality fixtures** (`cyrillic-prefix-chain`, `cyrillic-sentence-boundary`); **transcript external benchmark doc** + `fixtures/benchmark-videos/manifest.json`; **`cursor-handoff.md`** guided Cursor path after `agent:prepare` (`buildCursorHandoffMarkdown`, `manifest.cursorHandoffPath`).

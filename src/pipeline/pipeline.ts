@@ -15,6 +15,16 @@ import {
     type VideoInfo
 } from '@/pipeline/ytDlp';
 import { collapseRollingAutoCaptions } from '@/transcript/collapseRollingCaptions';
+import {
+    mergeDescriptionAlignment,
+    resolveDescriptionAlignmentFromEnv,
+    type DescriptionAlignmentPatch,
+    type DescriptionAlignmentPolicy
+} from '@/transcript/descriptionAlignmentConfig';
+import {
+    assessVideoDescriptionAlignment,
+    type VideoDescriptionAlignment
+} from '@/transcript/descriptionTranscriptAlignment';
 import { toMarkdown, toPlainText } from '@/transcript/formatTranscript';
 import { languageFromVttPath, pickBestVtt } from '@/transcript/pickBestVtt';
 import type { TranscriptMeta, TranscriptSegment } from '@/transcript/types';
@@ -33,6 +43,8 @@ export type PipelineOptions = {
     audioFormat: string;
     whisperCommand: string;
     keepWorkDir: boolean;
+    /** Overrides env (`YT_TRANSCRIPT_DESC_ALIGN_*`); CLI passes partial policy/thresholds. */
+    descriptionAlignment?: DescriptionAlignmentPatch;
 };
 
 export type PipelineResult = {
@@ -40,6 +52,14 @@ export type PipelineResult = {
     meta: TranscriptMeta;
     segmentCount: number;
     workDir?: string;
+    videoDescriptionAlignment: VideoDescriptionAlignment;
+    /** Fraction of counted description tokens found in transcript (0–1). */
+    videoDescriptionLexicalOverlap: number;
+    videoDescriptionTokenCount: number;
+    /** Page description omitted from `transcript.md` YAML when overlap vs spoken text is very low. */
+    videoDescriptionOmittedFromTranscriptYaml: boolean;
+    /** Effective policy after env + option merge (`always_include` never omits YAML). */
+    videoDescriptionAlignmentPolicy: DescriptionAlignmentPolicy;
 };
 
 function subMeta(
@@ -142,14 +162,42 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
             };
         }
 
-        const body = format === 'md' ? toMarkdown(meta, segments) : toPlainText(segments) + '\n';
+        const pageDescription = info.description ?? '';
+        const plainTranscript = toPlainText(segments);
+        const descAlign = mergeDescriptionAlignment(
+            resolveDescriptionAlignmentFromEnv(process.env),
+            options.descriptionAlignment
+        );
+        const descAssessment = assessVideoDescriptionAlignment(
+            pageDescription,
+            plainTranscript,
+            descAlign.thresholds
+        );
+        const shouldOmitDescriptionFromYaml =
+            descAlign.policy === 'heuristic' &&
+            descAssessment.alignment === 'low' &&
+            meta.description !== undefined &&
+            meta.description !== '';
+
+        const metaForMarkdown: TranscriptMeta = { ...meta };
+        if (shouldOmitDescriptionFromYaml) {
+            delete metaForMarkdown.description;
+        }
+
+        const body =
+            format === 'md' ? toMarkdown(metaForMarkdown, segments) : toPlainText(segments) + '\n';
 
         await writeFile(outputPath, body, 'utf8');
 
         const result: PipelineResult = {
             writtenPath: outputPath,
             meta,
-            segmentCount: segments.length
+            segmentCount: segments.length,
+            videoDescriptionAlignment: descAssessment.alignment,
+            videoDescriptionLexicalOverlap: descAssessment.overlapRatio,
+            videoDescriptionTokenCount: descAssessment.descriptionTokenCount,
+            videoDescriptionOmittedFromTranscriptYaml: shouldOmitDescriptionFromYaml,
+            videoDescriptionAlignmentPolicy: descAlign.policy
         };
         if (options.keepWorkDir) {
             result.workDir = workDir;

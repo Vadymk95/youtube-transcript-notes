@@ -1,5 +1,25 @@
 # Architectural Decisions
 
+## [2026-04] Page description vs transcript (YAML omission heuristic)
+
+**Decision**: After subtitle/Whisper segments are built, **`assessVideoDescriptionAlignment(pageDescription, plainTranscript, thresholds)`** scores token overlap (URLs stripped, English stop words dropped). When **`descriptionAlignment.policy`** is **`heuristic`**, the page description is long enough, and overlap is below the configured minimum, **`runPipeline`** omits **`description`** from **`transcript.md`** front matter only. **`policy: always_include`** keeps YAML description regardless of overlap (lexical metrics stay honest). Thresholds and policy resolve from **`YT_TRANSCRIPT_DESC_ALIGN_*`** and optional **`--desc-align-*`** flags (CLI patch merges over env). **`PipelineResult.meta.description`** and **`manifest.json` `videoDescription`** still hold the full yt-dlp text. The manifest stores **`videoDescriptionAlignment`**, **`videoDescriptionAlignmentPolicy`**, **`videoDescriptionLexicalOverlap`**, **`videoDescriptionTokenCount`**, **`videoDescriptionOmittedFromTranscriptYaml`**.
+
+**Why**: YouTube often reuses the description field for unrelated channel promos; embedding that in the prompt via `transcript.md` nudges summarizers away from the spoken content. Tunable defaults avoid a permanent TypeScript fork for different corpora.
+
+**Trade-off**: False positives/negatives remain possible across languages and thin transcripts; the heuristic is lexical, not semantic. Operators should still treat **`videoDescription`** as non-factual context when **`videoDescriptionAlignment` === `low`**.
+
+---
+
+## [2026-04] Guided Cursor handoff file after `agent:prepare`
+
+**Decision**: **`prepareAgentWorkflow`** writes **`cursor-handoff.md`** next to the canonical bundle, with absolute paths and a suggested **`agent:check-summary`** invocation. **`manifest.json`** includes **`cursorHandoffPath`**. Content is built by **`buildCursorHandoffMarkdown()`** (English markdown). Rollback on prepare failure removes this file too.
+
+**Why**: Satisfies roadmap “guided summarizer” without bundling a remote model or **`YT_SUMMARY_CMD`**; primary UX stays Cursor chat + transcript grounding.
+
+**Trade-off**: Another artifact to keep in sync with rules/docs; handoff is **not** validated by **`agent:check-summary`** (the summary file remains the contract).
+
+---
+
 ## [2026-04] CLI trust boundaries: YouTube URL allowlist, safe video ids, quoted shell args
 
 **Decision**: **`transcriptCli`**, **`agentWorkflowCli`**, and **`agentCompleteCli`** call **`assertYoutubeWatchUrl`** by default (http/https + hostname in `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, `youtu.be`). **`YT_TRANSCRIPT_ALLOW_ANY_URL`** (`1` / `true` / `yes`) or **`--allow-any-url`** skips the hostname check for power users and tests. **`parseVideoInfoFromDumpJson`** always runs **`assertSafeVideoIdForPath`** on the trimmed id before returning **`VideoInfo`**. Whisper and summary shell templates substitute placeholders with **`quoteForPosixShSingle`** so paths and `VIDEO_ID` cannot break out of a single `sh -c` word without newlines/NUL. **`agent:check-summary`** accepts optional **`--artifacts-root`** to reject summary paths outside a resolved directory.
@@ -62,7 +82,7 @@
 
 ## [2026-04] Single artifact bundle per video
 
-**Decision**: The canonical bundle under `artifacts/videos/<videoId>/` contains `transcript.md`, `summary-prompt.md`, `summary.<replyLanguage>.md`, and `manifest.json`.
+**Decision**: The canonical bundle under `artifacts/videos/<videoId>/` contains `transcript.md`, `summary-prompt.md`, `summary.<replyLanguage>.md`, `manifest.json`, and `cursor-handoff.md` (the last is written by `prepareAgentWorkflow`; the summary file is completed by the chat step).
 
 **Why**: The user-facing workflow requires a persisted handoff summary artifact, not just a prompt for another model. The filename now reflects the configured reply language code.
 
@@ -112,7 +132,7 @@
 
 ## [2026-04] Roll back partial agent artifacts on `prepare` failure
 
-**Decision**: If `prepareAgentWorkflow()` throws after writing bundle files in that invocation, delete `transcript.md`, `summary-prompt.md`, and `manifest.json` that were written in the same run. Do not delete the final summary file (user-owned).
+**Decision**: If `prepareAgentWorkflow()` throws after writing bundle files in that invocation, delete `transcript.md`, `summary-prompt.md`, `manifest.json`, and `cursor-handoff.md` that were written in the same run. Do not delete the final summary file (user-owned).
 
 **Why**: Avoids leaving a folder with a transcript but no manifest or prompt, which would confuse the agent contract.
 

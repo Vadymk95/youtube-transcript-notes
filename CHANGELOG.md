@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`YT_TRANSCRIPT_DESC_ALIGN_*`** env and **`--desc-align-*`** flags (`heuristic` / `always_include`, overlap/token/char thresholds) to tune description-vs-transcript YAML omission; **`manifest.videoDescriptionAlignmentPolicy`** records the effective policy.
+- Page **description vs transcript** heuristic: when YouTube `description` text has very low token overlap with the spoken transcript, it is omitted from `transcript.md` YAML only; full text and metrics (`videoDescriptionAlignment`, overlap, `videoDescriptionOmittedFromTranscriptYaml`) stay in `manifest.json`.
+- `cursor-handoff.md` and `manifest.cursorHandoffPath` from `agent:prepare` — guided Cursor checklist (absolute paths + suggested `agent:check-summary` line) without `YT_SUMMARY_CMD`.
+
 ## 1.5.1 — 2026-04-04
 
 ### Security

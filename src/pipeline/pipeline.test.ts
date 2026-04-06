@@ -103,6 +103,9 @@ describe('runPipeline', () => {
         expect(result.meta.language).toBe('en');
         expect(result.meta.videoId).toBe('vid');
         expect(result.meta.title).toBe('Test video');
+        expect(result.videoDescriptionAlignment).toBe('high');
+        expect(result.videoDescriptionAlignmentPolicy).toBe('heuristic');
+        expect(result.videoDescriptionOmittedFromTranscriptYaml).toBe(false);
         expect(result.segmentCount).toBe(1);
         expect(yt.downloadAudio).not.toHaveBeenCalled();
         expect(wf.runWhisperToVtt).not.toHaveBeenCalled();
@@ -130,6 +133,121 @@ describe('runPipeline', () => {
         const body = await readFile(outFile, 'utf8');
         expect(body).toContain('description: ');
         expect(body).toContain('https://x.test');
+    });
+
+    it('omits misaligned page description from markdown YAML but keeps meta.description', async () => {
+        yt.downloadManualSubs.mockImplementation(async (_url: string, workDir: string) => {
+            const subDir = path.join(workDir, 'manual-subs');
+            await mkdir(subDir, { recursive: true });
+            const p = path.join(subDir, 'vid.en.vtt');
+            const elephantVtt = `WEBVTT
+
+00:00:00.000 --> 00:00:03.000
+The elephants at the zoo are amazing we love watching them eat hay and play with each other the zookeeper brings fresh water daily
+`;
+            await writeFile(p, elephantVtt, 'utf8');
+            return { kind: 'manual' as const, files: [p] };
+        });
+        yt.downloadAutoSubs.mockResolvedValue({ kind: 'auto', files: [] });
+
+        const spamDesc =
+            'Microplastic pollution harms marine wildlife ecosystems worldwide scientists discovered shocking contamination levels in oceans urgent action required additional research studies demonstrate persistent organic pollutants bioaccumulation in food chains visit https://youtube.com/foo';
+
+        const result = await runPipeline({
+            ...baseOptions(outFile),
+            videoInfo: { id: 'vid', title: 'Test video', description: spamDesc }
+        });
+
+        expect(result.meta.description).toBe(spamDesc);
+        expect(result.videoDescriptionAlignment).toBe('low');
+        expect(result.videoDescriptionAlignmentPolicy).toBe('heuristic');
+        expect(result.videoDescriptionOmittedFromTranscriptYaml).toBe(true);
+
+        const body = await readFile(outFile, 'utf8');
+        expect(body).not.toContain('Microplastic');
+        expect(body).not.toContain('description:');
+        expect(body).toContain('elephants');
+    });
+
+    it('keeps yaml description when YT_TRANSCRIPT_DESC_ALIGN_POLICY=always_include', async () => {
+        const prev = process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY;
+        process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY = 'always_include';
+        try {
+            yt.downloadManualSubs.mockImplementation(async (_url: string, workDir: string) => {
+                const subDir = path.join(workDir, 'manual-subs');
+                await mkdir(subDir, { recursive: true });
+                const p = path.join(subDir, 'vid.en.vtt');
+                const elephantVtt = `WEBVTT
+
+00:00:00.000 --> 00:00:03.000
+The elephants at the zoo are amazing we love watching them eat hay and play with each other the zookeeper brings fresh water daily
+`;
+                await writeFile(p, elephantVtt, 'utf8');
+                return { kind: 'manual' as const, files: [p] };
+            });
+            yt.downloadAutoSubs.mockResolvedValue({ kind: 'auto', files: [] });
+
+            const spamDesc =
+                'Microplastic pollution harms marine wildlife ecosystems worldwide scientists discovered shocking contamination levels in oceans urgent action required additional research studies demonstrate persistent organic pollutants bioaccumulation in food chains visit https://youtube.com/foo';
+
+            const result = await runPipeline({
+                ...baseOptions(outFile),
+                videoInfo: { id: 'vid', title: 'Test video', description: spamDesc }
+            });
+
+            expect(result.videoDescriptionAlignment).toBe('low');
+            expect(result.videoDescriptionAlignmentPolicy).toBe('always_include');
+            expect(result.videoDescriptionOmittedFromTranscriptYaml).toBe(false);
+
+            const body = await readFile(outFile, 'utf8');
+            expect(body).toContain('Microplastic');
+        } finally {
+            if (prev === undefined) {
+                delete process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY;
+            } else {
+                process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY = prev;
+            }
+        }
+    });
+
+    it('keeps yaml description when descriptionAlignment option is always_include (over env default)', async () => {
+        const prevPolicy = process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY;
+        delete process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY;
+        try {
+            yt.downloadManualSubs.mockImplementation(async (_url: string, workDir: string) => {
+                const subDir = path.join(workDir, 'manual-subs');
+                await mkdir(subDir, { recursive: true });
+                const p = path.join(subDir, 'vid.en.vtt');
+                const elephantVtt = `WEBVTT
+
+00:00:00.000 --> 00:00:03.000
+The elephants at the zoo are amazing we love watching them eat hay and play with each other the zookeeper brings fresh water daily
+`;
+                await writeFile(p, elephantVtt, 'utf8');
+                return { kind: 'manual' as const, files: [p] };
+            });
+            yt.downloadAutoSubs.mockResolvedValue({ kind: 'auto', files: [] });
+
+            const spamDesc =
+                'Microplastic pollution harms marine wildlife ecosystems worldwide scientists discovered shocking contamination levels in oceans urgent action required additional research studies demonstrate persistent organic pollutants bioaccumulation in food chains visit https://youtube.com/foo';
+
+            const result = await runPipeline({
+                ...baseOptions(outFile),
+                videoInfo: { id: 'vid', title: 'Test video', description: spamDesc },
+                descriptionAlignment: { policy: 'always_include' }
+            });
+
+            expect(result.videoDescriptionAlignmentPolicy).toBe('always_include');
+            expect(result.videoDescriptionOmittedFromTranscriptYaml).toBe(false);
+            const body = await readFile(outFile, 'utf8');
+            expect(body).toContain('Microplastic');
+        } finally {
+            if (prevPolicy === undefined) {
+                delete process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY;
+            } else {
+                process.env.YT_TRANSCRIPT_DESC_ALIGN_POLICY = prevPolicy;
+            }
+        }
     });
 
     it('uses auto subs when manual is short but auto meets minSubtitleChars', async () => {

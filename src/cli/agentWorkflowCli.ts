@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util';
 
 import { assertYoutubeWatchUrl } from '@/shared/youtubeUrlPolicy';
 import { prepareAgentWorkflow } from '@/summary/agentWorkflow';
+import { descriptionAlignmentPatchFromCli } from '@/transcript/descriptionAlignmentConfig';
 
 function printHelp(): void {
     console.log(`youtube-transcript-notes agent workflow
@@ -20,10 +21,14 @@ Options:
   --keep-tmp               Keep temp work directory from runPipeline
   --reply-lang <code>      Summary preset: ru | en (overrides YT_SUMMARY_LANG)
   --allow-any-url          Skip YouTube-only URL allowlist (see YT_TRANSCRIPT_ALLOW_ANY_URL)
+  --desc-align-policy <h>  heuristic | always_include (overrides YT_TRANSCRIPT_DESC_ALIGN_POLICY)
+  --desc-align-min-overlap <n>  (0,1] — min token overlap to keep YAML description
+  --desc-align-min-tokens <n>    min contentful description tokens before judging misalignment
+  --desc-align-min-chars <n>     min description length before judging misalignment
   -h, --help               Show help
 
 Output:
-  Writes transcript/prompt/summary path/manifest artifacts and prints manifest JSON to stdout.
+  Writes transcript, summary-prompt, manifest, cursor-handoff, and summary path fields; prints manifest JSON to stdout.
 `);
 }
 
@@ -39,6 +44,10 @@ async function main(): Promise<void> {
             'keep-tmp': { type: 'boolean', default: false },
             'reply-lang': { type: 'string' },
             'allow-any-url': { type: 'boolean', default: false },
+            'desc-align-policy': { type: 'string' },
+            'desc-align-min-overlap': { type: 'string' },
+            'desc-align-min-tokens': { type: 'string' },
+            'desc-align-min-chars': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -69,6 +78,19 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
+    let descAlignPatch;
+    try {
+        descAlignPatch = descriptionAlignmentPatchFromCli({
+            'desc-align-policy': values['desc-align-policy'],
+            'desc-align-min-overlap': values['desc-align-min-overlap'],
+            'desc-align-min-tokens': values['desc-align-min-tokens'],
+            'desc-align-min-chars': values['desc-align-min-chars']
+        });
+    } catch (e: unknown) {
+        console.error(e instanceof Error ? e.message : e);
+        process.exit(1);
+    }
+
     const result = await prepareAgentWorkflow({
         url,
         artifactsDir: values['artifacts-dir'],
@@ -77,7 +99,8 @@ async function main(): Promise<void> {
         minSubtitleChars: minChars,
         audioFormat: values['audio-format'],
         whisperCommand: values['whisper-cmd'],
-        keepWorkDir: values['keep-tmp']
+        keepWorkDir: values['keep-tmp'],
+        descriptionAlignment: descAlignPatch
     });
 
     console.log(JSON.stringify(result, null, 2));

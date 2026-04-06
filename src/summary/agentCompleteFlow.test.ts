@@ -27,6 +27,7 @@ vi.mock('@/summary/summaryCommand', async () => {
 });
 
 import { runAgentComplete, SummaryValidationFailedError } from '@/summary/agentCompleteFlow';
+import type { AgentWorkflowResult } from '@/summary/agentWorkflow';
 
 describe('runAgentComplete', () => {
     let tmp: string;
@@ -34,23 +35,30 @@ describe('runAgentComplete', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         tmp = await mkdtemp(path.join(os.tmpdir(), 'complete-flow-'));
-        prepare.prepareAgentWorkflow.mockResolvedValue({
+        const workflowStub = {
             artifactDir: path.join(tmp, 'vid'),
             transcriptPath: path.join(tmp, 'vid', 'transcript.md'),
             summaryPromptPath: path.join(tmp, 'vid', 'summary-prompt.md'),
             summaryPath: path.join(tmp, 'vid', 'summary.ru.md'),
             manifestPath: path.join(tmp, 'vid', 'manifest.json'),
+            cursorHandoffPath: path.join(tmp, 'vid', 'cursor-handoff.md'),
             replyLanguage: 'ru',
             videoId: 'vid',
             videoUrl: 'https://example.com',
             videoTitle: 't',
             videoDescription: '',
-            transcriptFormat: 'md',
-            transcriptSource: 'subtitle-manual',
+            videoDescriptionAlignment: 'high' as const,
+            videoDescriptionLexicalOverlap: 1,
+            videoDescriptionTokenCount: 0,
+            videoDescriptionOmittedFromTranscriptYaml: false,
+            videoDescriptionAlignmentPolicy: 'heuristic' as const,
+            transcriptFormat: 'md' as const,
+            transcriptSource: 'subtitle-manual' as const,
             generatedAt: new Date().toISOString(),
             transcriptFileChars: 1,
             transcriptBodyChars: 1
-        });
+        } satisfies AgentWorkflowResult;
+        prepare.prepareAgentWorkflow.mockResolvedValue(workflowStub);
     });
 
     afterEach(async () => {

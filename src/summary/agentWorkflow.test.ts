@@ -24,6 +24,7 @@ vi.mock('@/pipeline/ytDlp', () => ({
 
 import {
     assembleSummaryPrompt,
+    buildCursorHandoffMarkdown,
     prepareAgentWorkflow,
     rollbackAgentArtifactFiles
 } from '@/summary/agentWorkflow';
@@ -98,7 +99,12 @@ language: en
                     videoId: 'abc123',
                     title: 'Amazing video'
                 },
-                segmentCount: 1
+                segmentCount: 1,
+                videoDescriptionAlignment: 'high',
+                videoDescriptionLexicalOverlap: 1,
+                videoDescriptionTokenCount: 0,
+                videoDescriptionOmittedFromTranscriptYaml: false,
+                videoDescriptionAlignmentPolicy: 'heuristic'
             };
         });
 
@@ -111,6 +117,9 @@ language: en
         );
         expect(result.summaryPath).toBe(path.join(artifactsDir, 'abc123', summaryFileName()));
         expect(result.manifestPath).toBe(path.join(artifactsDir, 'abc123', 'manifest.json'));
+        expect(result.cursorHandoffPath).toBe(
+            path.join(artifactsDir, 'abc123', 'cursor-handoff.md')
+        );
         expect(result.transcriptSource).toBe('subtitle-auto');
         expect(result.transcriptLanguage).toBe('en');
         expect(result.replyLanguage).toBe('ru');
@@ -135,15 +144,32 @@ language: en
             summaryPath: string;
             summaryPromptPath: string;
             transcriptPath: string;
+            cursorHandoffPath: string;
             transcriptFileChars: number;
             transcriptBodyChars: number;
             videoDescription: string;
+            videoDescriptionAlignment: string;
+            videoDescriptionLexicalOverlap: number;
+            videoDescriptionTokenCount: number;
+            videoDescriptionOmittedFromTranscriptYaml: boolean;
+            videoDescriptionAlignmentPolicy: string;
         };
         expect(manifest.transcriptPath).toBe(result.transcriptPath);
         expect(manifest.summaryPromptPath).toBe(result.summaryPromptPath);
         expect(manifest.summaryPath).toBe(result.summaryPath);
+        expect(manifest.cursorHandoffPath).toBe(result.cursorHandoffPath);
+
+        const handoff = await readFile(result.cursorHandoffPath, 'utf8');
+        expect(handoff).toContain('You do not need `YT_SUMMARY_CMD`');
+        expect(handoff).toContain(path.resolve(result.summaryPath));
+        expect(handoff).toContain('agent:check-summary');
         expect(manifest.replyLanguage).toBe('ru');
         expect(manifest.videoDescription).toBe('');
+        expect(manifest.videoDescriptionAlignment).toBe('high');
+        expect(manifest.videoDescriptionLexicalOverlap).toBe(1);
+        expect(manifest.videoDescriptionTokenCount).toBe(0);
+        expect(manifest.videoDescriptionOmittedFromTranscriptYaml).toBe(false);
+        expect(manifest.videoDescriptionAlignmentPolicy).toBe('heuristic');
         expect(manifest.transcriptFileChars).toBe(transcript.length);
         expect(manifest.transcriptBodyChars).toBeLessThan(manifest.transcriptFileChars);
         expect(manifest.transcriptBodyChars).toBeGreaterThan(0);
@@ -174,7 +200,12 @@ title: "Test"
                     videoId: 'xyz999',
                     title: 'Test'
                 },
-                segmentCount: 1
+                segmentCount: 1,
+                videoDescriptionAlignment: 'high',
+                videoDescriptionLexicalOverlap: 1,
+                videoDescriptionTokenCount: 0,
+                videoDescriptionOmittedFromTranscriptYaml: false,
+                videoDescriptionAlignmentPolicy: 'heuristic'
             };
         });
 
@@ -186,6 +217,29 @@ title: "Test"
         );
         const prompt = await readFile(result.summaryPromptPath, 'utf8');
         expect(prompt).toContain('## What the video is about');
+    });
+});
+
+describe('buildCursorHandoffMarkdown', () => {
+    it('includes check-summary with --reply-lang when not ru', () => {
+        const md = buildCursorHandoffMarkdown({
+            videoTitle: 'T',
+            videoUrl: 'https://www.youtube.com/watch?v=a',
+            videoId: 'a',
+            replyLanguage: 'en',
+            summaryBasename: 'summary.en.md',
+            repoRootAssumed: '/repo',
+            paths: {
+                artifactDir: '/repo/art/vid',
+                manifestPath: '/repo/art/vid/manifest.json',
+                summaryPromptPath: '/repo/art/vid/summary-prompt.md',
+                summaryPath: '/repo/art/vid/summary.en.md',
+                transcriptPath: '/repo/art/vid/transcript.md',
+                cursorHandoffPath: '/repo/art/vid/cursor-handoff.md'
+            }
+        });
+        expect(md).toContain('--reply-lang en');
+        expect(md).not.toContain('--reply-lang ru');
     });
 });
 

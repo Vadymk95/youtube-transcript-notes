@@ -34,20 +34,22 @@ npm run ci
 
 ## Canonical Artifact Contract
 
-The agent workflow writes exactly these files:
+The agent workflow writes these files:
 
 ```text
 artifacts/videos/<videoId>/
   transcript.md
   summary-prompt.md
- summary.<replyLanguage>.md
+  summary.<replyLanguage>.md
   manifest.json
+  cursor-handoff.md
 ```
 
-`manifest.json` is the machine-friendly entrypoint (includes `transcriptFileChars`, `transcriptBodyChars`, and `videoDescription` for context budgeting and YouTube page links/notes).
+`manifest.json` is the machine-friendly entrypoint (includes `transcriptFileChars`, `transcriptBodyChars`, `videoDescription`, `videoDescriptionAlignment`, `videoDescriptionAlignmentPolicy`, overlap metrics, `videoDescriptionOmittedFromTranscriptYaml`, and `cursorHandoffPath` for context budgeting and YouTube page text hygiene). Description YAML omission is tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` and `--desc-align-*` on transcript + agent CLIs (see `src/transcript/descriptionAlignmentConfig.ts`).
 `summary-prompt.md` is the source used to draft the final answer.
 `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).
 `transcript.md` is the raw fallback source.
+`cursor-handoff.md` is a **guided** copy-paste checklist for Cursor chat (absolute paths + suggested `agent:check-summary` line); **not** a substitute for `summary.<replyLanguage>.md` and **not** validated by `agent:check-summary`.
 
 The reply language, summary filename, headings, ambiguity fallback, and validator rules are driven by **`src/summary/outputLanguage.ts`** presets, selected with **`YT_SUMMARY_LANG`** (e.g. `ru`, `en`) or **`--reply-lang`** on `agent:prepare` / `agent:check-summary` (CLI wins over env).
 
