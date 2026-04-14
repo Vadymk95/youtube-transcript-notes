@@ -28,6 +28,7 @@ Primary workflow commands:
 
 ```bash
 npm run agent:prepare -- "<youtube-url>"
+npm run agent:prepare -- --batch-file ./urls.txt
 npm run agent:complete -- "<youtube-url>" --prepare-only
 npm run ci
 ```

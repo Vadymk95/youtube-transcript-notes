@@ -13,11 +13,11 @@ All files here are **English** (project convention). Start from **role**, not fi
 
 ## Maintainers and roadmap
 
-| Document                                                               | Purpose                                                                          |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [technical-debt-roadmap.md](./technical-debt-roadmap.md)               | Open backlog (batch URLs, summary density, exploratory items); delete when empty |
-| [transcript-external-benchmark.md](./transcript-external-benchmark.md) | Optional network benchmark vs CI-offline harness; golden IDs                     |
-| [reliability-handoff-prompt.md](./reliability-handoff-prompt.md)       | Copy-paste prompt for incident-style reliability work + pointers to DECISIONS    |
+| Document                                                               | Purpose                                                                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [technical-debt-roadmap.md](./technical-debt-roadmap.md)               | Open backlog (summary density, exploratory items); **`agent:prepare --batch-file`** shipped — see repo README |
+| [transcript-external-benchmark.md](./transcript-external-benchmark.md) | Optional network benchmark vs CI-offline harness; golden IDs                                                  |
+| [reliability-handoff-prompt.md](./reliability-handoff-prompt.md)       | Copy-paste prompt for incident-style reliability work + pointers to DECISIONS                                 |
 
 ## Process and cross-repo
 

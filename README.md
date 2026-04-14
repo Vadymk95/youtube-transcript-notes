@@ -61,6 +61,7 @@ Default output language is Russian, so the default summary file is `summary.ru.m
 | `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`                | Tune YAML **`description`** omission: **`YT_TRANSCRIPT_DESC_ALIGN_POLICY`** (`heuristic` \| `always_include`, aliases `on`/`off`/`include`); **`YT_TRANSCRIPT_DESC_ALIGN_MIN_OVERLAP`** (0–1]; **`YT_TRANSCRIPT_DESC_ALIGN_MIN_TOKENS`**; **`YT_TRANSCRIPT_DESC_ALIGN_MIN_CHARS`**. **`yt-transcript`** and **`agent:prepare`**: **`--desc-align-policy`**, **`--desc-align-min-overlap`**, etc. |
 | `YT_TRANSCRIPT_VERIFICATION_HINTS` / `--no-verification-hints` | Default: write **`verification-hints.md`** (URLs from description + sample timestamps; no network). Set env to **`0`** / **`false`** or pass **`--no-verification-hints`** to skip.                                                                                                                                                                                                              |
 | `YT_TRANSCRIPT_KEY_FRAMES` / `--key-frames`                    | When enabled, downloads merged video and writes JPEG stills under **`keyframes/`** (heavy). **`YT_TRANSCRIPT_KEY_FRAME_MAX`** (default **24**), **`YT_TRANSCRIPT_KEY_FRAME_MIN_INTERVAL_SEC`** (default **45**). CLI: **`--key-frame-max`**, **`--key-frame-min-interval-sec`**.                                                                                                                 |
+| **`agent:prepare` batch** / **`YT_TRANSCRIPT_BATCH_DELAY_MS`** | **`--batch-file <path>`** (`-` = stdin): one URL per line. **`--batch-delay-ms`** or env spacing between URLs (default **0**). **`--batch-max`**, **`--batch-continue-on-error`**.                                                                                                                                                                                                               |
 | `manifest.json`                                                | Read **`transcriptFileChars`**, **`transcriptBodyChars`**, **`videoDescription`**, alignment fields (**`videoDescriptionAlignment`**, **`videoDescriptionAlignmentPolicy`**, overlap/token counts, **`videoDescriptionOmittedFromTranscriptYaml`**), **`cursorHandoffPath`**, optional **`verificationHintsPath`**, optional **`keyFrames`**.                                                    |
 
 ### CLI only
@@ -119,6 +120,18 @@ node dist/cli/transcriptCli.js "<url>" -o ./notes.md
 ```bash
 npm run agent:prepare -- "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
+
+**Batch URLs** (sequential runs; no parallel hammering against YouTube):
+
+```bash
+# urls.txt: one https://... per line, optional # comments
+npm run agent:prepare -- --batch-file ./urls.txt
+# optional: pause between videos (ms), cap how many lines to run, continue after errors
+npm run agent:prepare -- --batch-file ./urls.txt --batch-delay-ms 2000 --batch-max 10
+npm run agent:prepare -- --batch-file - --batch-continue-on-error < ./urls.txt
+```
+
+Stdout is a single JSON object: `{ "batch": true, "count": N, "results": [ ... ] }`; with **`--batch-continue-on-error`**, failed URLs appear in **`failures`** and the process exits **non-zero** if any failure occurred.
 
 **Optional: end-to-end with a shell** (prepare → your command writes `summary.<lang>.md` → validate). For **Cursor and similar editors**, the usual path is `agent:prepare` and then the **chat agent** writes the summary from `summary-prompt.md`, not this hook.
 

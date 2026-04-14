@@ -1,5 +1,15 @@
 # Architectural Decisions
 
+## [2026-04] Sequential batch URLs in `agent:prepare`
+
+**Decision**: `agentWorkflowCli` supports **`--batch-file <path>`** (`-` reads stdin): one YouTube watch URL per line; empty lines and **`#`** comments skipped. Invokes **`prepareAgentWorkflow` sequentially** (no parallel yt-dlp / page load bursts). Optional **`--batch-delay-ms`** or **`YT_TRANSCRIPT_BATCH_DELAY_MS`**, **`--batch-max`**, **`--batch-continue-on-error`**. Stdout is one JSON object with **`results`** (and optional **`failures`**); process exits **non-zero** if any URL failed.
+
+**Why**: Backlog convenience without changing the single-URL prepare contract or encouraging unbounded parallelism against YouTube.
+
+**Trade-off**: No playlist expansion in v1; operators paste explicit URLs. Mixing a positional URL with **`--batch-file`** is rejected.
+
+---
+
 ## [2026-04] Verification hints file + optional ffmpeg key frames in `agent:prepare`
 
 **Decision**: After `runPipeline`, **`prepareAgentWorkflow`** may write **`verification-hints.md`** (http(s) URLs from page description + spaced transcript anchors; **no network I/O**) unless disabled via **`verificationHints: false`** or **`YT_TRANSCRIPT_VERIFICATION_HINTS=0`**. When **`keyFrames: true`** or **`YT_TRANSCRIPT_KEY_FRAMES=1`**, download merged video with **`downloadMergedVideo`**, extract JPEGs under **`keyframes/`** via **`extractKeyFrameStills`** (`ffmpeg`), delete temp video. **`summary-prompt.md`** gains **`{{SUPPLEMENTARY_CONTEXT}}`** pointing at those artifacts. **`manifest.json`** may include **`verificationHintsPath`** and **`keyFrames`** `{ enabled, directory, files, timesSec }`.
@@ -14,7 +24,7 @@
 
 ## [2026-04] Roadmap maintainer priorities (denser handoff, fact-fetch, frames)
 
-**Decision**: Treat **`docs/technical-debt-roadmap.md`** **Current focus** as the live priority: implement **denser second-hop handoff** (prompt + `outputLanguage` + `summaryContract`) and **claim verification / fact-fetch** only with a written spec and without replacing the canonical prepare → summary → validate path. **Batch URL orchestration** stays **deferred**. **ffmpeg**-based **timecoded stills** (from transcript cue times or sparse sampling) plus optional vision/multimodal **review hints** are the intended shape of multimodal work; they remain **optional** and **off** by default so the core pipeline works without downloaded video.
+**Decision**: Treat **`docs/technical-debt-roadmap.md`** **Current focus** as the live priority: implement **denser second-hop handoff** (prompt + `outputLanguage` + `summaryContract`) and **claim verification / fact-fetch** only with a written spec and without replacing the canonical prepare → summary → validate path. **ffmpeg**-based **timecoded stills** (from transcript cue times or sparse sampling) plus optional vision/multimodal **review hints** are the intended shape of multimodal work; they remain **optional** and **off** by default so the core pipeline works without downloaded video.
 
 **Why**: Matches product need for accuracy and on-screen grounding without forcing parallel URL hammering or cloud dependencies.
 
