@@ -6,6 +6,11 @@
 
 **Context:** accuracy vs hallucination, **structured** handoff contract, and **transcript-only vs on-screen** limits — [grounding-limits-and-future-modalities.md](./grounding-limits-and-future-modalities.md).
 
+## Current focus (maintainer priority — not the same as difficulty order)
+
+- **Now:** (1) **denser handoff** (backlog item 2), (2) **fact-fetch / claim verification** (item 3, spec before code), (3) **timecoded frames** — extract stills with **ffmpeg** at transcript cue times (or a sparse grid), write paths under the video artifact bundle, optional **vision or multimodal** pass to label “worth human/model review” — extends item 4; keep the step **optional** and **local-first** by default (no cloud as required path).
+- **Deferred:** **batch URLs** (item 1) until there is a concrete need.
+
 ## Backlog (real difficulty: easiest → hardest)
 
 1. **Batch URLs** — orchestrate multiple **watch URLs** in **one CLI run** (read list from file or stdin), call **`prepare` sequentially** (same pattern as **sequential `--sub-langs`**: avoid parallel hammering, optional **delay ms** / **max count**). Playlists as a **later** slice (yt-dlp surface, higher scraping/ToS risk).
@@ -14,7 +19,7 @@
 
 3. **Claim verification / fact-fetch (exploratory)** — optional evidence pass; spec before code; must not replace the canonical URL → transcript → summary → `agent:check-summary` path. **Network + trust + labeling**; easier to get wrong than batch.
 
-4. **Multimodal / key-frame context (exploratory)** — speech + on-screen context; **ffmpeg**, artifact layout, optional manifest fields; spec before implementation. **Depends on disk video + tooling**; keep core path working without it.
+4. **Multimodal / key-frame context (exploratory)** — speech + on-screen context; **ffmpeg** extracts **frames at timecodes** derived from transcript segments (or fixed stride), stored next to the bundle; optional second step: small vision model or multimodal LLM to flag slides/code/UI worth cross-checking (pairs with **fact-fetch** for evidence labeling). **Depends on downloaded video + disk**; spec before implementation; core URL → transcript → summary path must run **without** this step.
 
 5. **Searchable archive / semantic retrieval** — **new indexing/storage layer** and retrieval policy; orthogonal to “one video folder” workflow.
 

@@ -1,5 +1,15 @@
 # Architectural Decisions
 
+## [2026-04] Roadmap maintainer priorities (denser handoff, fact-fetch, frames)
+
+**Decision**: Treat **`docs/technical-debt-roadmap.md`** **Current focus** as the live priority: implement **denser second-hop handoff** (prompt + `outputLanguage` + `summaryContract`) and **claim verification / fact-fetch** only with a written spec and without replacing the canonical prepare → summary → validate path. **Batch URL orchestration** stays **deferred**. **ffmpeg**-based **timecoded stills** (from transcript cue times or sparse sampling) plus optional vision/multimodal **review hints** are the intended shape of multimodal work; they remain **optional** and **off** by default so the core pipeline works without downloaded video.
+
+**Why**: Matches product need for accuracy and on-screen grounding without forcing parallel URL hammering or cloud dependencies.
+
+**Trade-off**: More moving parts (disk, vision CLI or API choice, labeling policy); requires explicit trust boundaries in the spec.
+
+---
+
 ## [2026-04] Documentation index and grounding vs modalities narrative
 
 **Decision**: Maintain **`docs/README.md`** as the canonical **index** of all files under `docs/` (grouped by audience). Add **`docs/grounding-limits-and-future-modalities.md`** to explain (1) layers that improve **accuracy** vs **shape**, (2) that **`agent:check-summary`** validates structure, not factual truth, (3) **transcript-only** limits for on-screen detail and how that ties to roadmap items **2** (denser handoff), **4** (multimodal), and **6** (UI/extension). Cross-link from **`docs/technical-debt-roadmap.md`**, **`CONTRIBUTING.md`**, root **`README.md`**, and **`MAP.md`**.
