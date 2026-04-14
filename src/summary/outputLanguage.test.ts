@@ -66,5 +66,6 @@ describe('renderPromptRequiredOutputFormat', () => {
         expect(block).toContain('BLUF');
         expect(block).toContain('strict chronological (video) order');
         expect(block).toContain('Preset speculative/hedging phrases are **allowed here**');
+        expect(block).toContain('[mm:ss]');
     });
 });

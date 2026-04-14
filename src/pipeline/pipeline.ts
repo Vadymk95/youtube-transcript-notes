@@ -50,6 +50,8 @@ export type PipelineOptions = {
 export type PipelineResult = {
     writtenPath: string;
     meta: TranscriptMeta;
+    /** Final transcript segments (post-collapse when auto captions). Used for optional key-frame timing. */
+    segments: TranscriptSegment[];
     segmentCount: number;
     workDir?: string;
     videoDescriptionAlignment: VideoDescriptionAlignment;
@@ -192,6 +194,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
         const result: PipelineResult = {
             writtenPath: outputPath,
             meta,
+            segments,
             segmentCount: segments.length,
             videoDescriptionAlignment: descAssessment.alignment,
             videoDescriptionLexicalOverlap: descAssessment.overlapRatio,

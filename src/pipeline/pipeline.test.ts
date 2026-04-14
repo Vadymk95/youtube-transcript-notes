@@ -107,6 +107,7 @@ describe('runPipeline', () => {
         expect(result.videoDescriptionAlignmentPolicy).toBe('heuristic');
         expect(result.videoDescriptionOmittedFromTranscriptYaml).toBe(false);
         expect(result.segmentCount).toBe(1);
+        expect(result.segments).toHaveLength(1);
         expect(yt.downloadAudio).not.toHaveBeenCalled();
         expect(wf.runWhisperToVtt).not.toHaveBeenCalled();
 

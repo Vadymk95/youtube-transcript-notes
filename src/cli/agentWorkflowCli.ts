@@ -25,10 +25,15 @@ Options:
   --desc-align-min-overlap <n>  (0,1] — min token overlap to keep YAML description
   --desc-align-min-tokens <n>    min contentful description tokens before judging misalignment
   --desc-align-min-chars <n>     min description length before judging misalignment
+  --no-verification-hints   Skip verification-hints.md (URLs + time anchors; default: write)
+  --key-frames             Download merged video and extract JPEG stills under keyframes/ (heavy)
+  --key-frame-max <n>      Max stills with --key-frames (default: 24; env YT_TRANSCRIPT_KEY_FRAME_MAX)
+  --key-frame-min-interval-sec <n>  Min seconds between stills (default: 45)
   -h, --help               Show help
 
 Output:
-  Writes transcript, summary-prompt, manifest, cursor-handoff, and summary path fields; prints manifest JSON to stdout.
+  Writes transcript, summary-prompt, manifest, cursor-handoff, optional verification-hints.md and keyframes/;
+  prints manifest JSON to stdout.
 `);
 }
 
@@ -48,6 +53,10 @@ async function main(): Promise<void> {
             'desc-align-min-overlap': { type: 'string' },
             'desc-align-min-tokens': { type: 'string' },
             'desc-align-min-chars': { type: 'string' },
+            'no-verification-hints': { type: 'boolean', default: false },
+            'key-frames': { type: 'boolean', default: false },
+            'key-frame-max': { type: 'string' },
+            'key-frame-min-interval-sec': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -91,6 +100,13 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
+    const keyFrameMaxRaw = values['key-frame-max']
+        ? Number.parseInt(values['key-frame-max'], 10)
+        : NaN;
+    const keyFrameMinRaw = values['key-frame-min-interval-sec']
+        ? Number.parseInt(values['key-frame-min-interval-sec'], 10)
+        : NaN;
+
     const result = await prepareAgentWorkflow({
         url,
         artifactsDir: values['artifacts-dir'],
@@ -100,7 +116,13 @@ async function main(): Promise<void> {
         audioFormat: values['audio-format'],
         whisperCommand: values['whisper-cmd'],
         keepWorkDir: values['keep-tmp'],
-        descriptionAlignment: descAlignPatch
+        descriptionAlignment: descAlignPatch,
+        verificationHints: values['no-verification-hints'] ? false : undefined,
+        keyFrames: values['key-frames'] ? true : undefined,
+        keyFrameMax:
+            Number.isFinite(keyFrameMaxRaw) && keyFrameMaxRaw > 0 ? keyFrameMaxRaw : undefined,
+        keyFrameMinIntervalSec:
+            Number.isFinite(keyFrameMinRaw) && keyFrameMinRaw > 0 ? keyFrameMinRaw : undefined
     });
 
     console.log(JSON.stringify(result, null, 2));

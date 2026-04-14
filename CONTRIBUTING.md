@@ -43,6 +43,8 @@ npm run agent:check-summary -- "artifacts/videos/<videoId>/summary.<replyLanguag
 npm run agent:complete -- "<youtube-url>" --prepare-only
 ```
 
+Optional **`agent:prepare`** / **`agent:complete`**: `--no-verification-hints`, `--key-frames`, `--key-frame-max`, `--key-frame-min-interval-sec` (see README env table). Key frames trigger a second yt-dlp download plus ffmpeg — use sparingly.
+
 Run **`agent:check-summary`** after the handoff `summary.<replyLanguage>.md` exists (`manifest.json` shows `replyLanguage`; pass `--reply-lang` when not default `ru`). See **Summary contract** below.
 
 Full loop with a **local** summarizer: configure `YT_SUMMARY_CMD` (see README), then `npm run agent:complete -- "<youtube-url>"`. The repo does not run a remote LLM by default.

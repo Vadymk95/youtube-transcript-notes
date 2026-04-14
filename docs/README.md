@@ -9,6 +9,8 @@ All files here are **English** (project convention). Start from **role**, not fi
 | [troubleshooting.md](./troubleshooting.md)                                               | yt-dlp, ffmpeg, Whisper, HTTP 429, summary validator failures                                                                                            |
 | [grounding-limits-and-future-modalities.md](./grounding-limits-and-future-modalities.md) | Why summaries must stay **transcript-grounded**, how **structure** is enforced, what breaks without **on-screen** context, future work (multimodal / UI) |
 
+**Optional `agent:prepare` artifacts (when enabled):** `verification-hints.md` (URLs + time anchors; no network I/O) and `keyframes/*.jpg` (ffmpeg stills; requires `--key-frames` or `YT_TRANSCRIPT_KEY_FRAMES=1`; heavy download). See README env table.
+
 ## Maintainers and roadmap
 
 | Document                                                               | Purpose                                                                          |

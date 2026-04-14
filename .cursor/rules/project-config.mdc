@@ -43,6 +43,8 @@ artifacts/videos/<videoId>/
   summary.<replyLanguage>.md
   manifest.json
   cursor-handoff.md
+  verification-hints.md   (optional; default on — URLs + time anchors; no network)
+  keyframes/*.jpg         (optional; requires --key-frames or YT_TRANSCRIPT_KEY_FRAMES; heavy yt-dlp + ffmpeg)
 ```
 
 `manifest.json` is the machine-friendly entrypoint (includes `transcriptFileChars`, `transcriptBodyChars`, `videoDescription`, `videoDescriptionAlignment`, `videoDescriptionAlignmentPolicy`, overlap metrics, `videoDescriptionOmittedFromTranscriptYaml`, and `cursorHandoffPath` for context budgeting and YouTube page text hygiene). Description YAML omission is tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` and `--desc-align-*` on transcript + agent CLIs (see `src/transcript/descriptionAlignmentConfig.ts`).

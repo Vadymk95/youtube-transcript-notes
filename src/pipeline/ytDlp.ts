@@ -218,6 +218,45 @@ export async function downloadAutoSubs(url: string, workDir: string): Promise<Su
     return downloadSubsWithWriter(url, workDir, '--write-auto-subs', 'auto-subs', 'auto');
 }
 
+/**
+ * Downloads a merged video file (best video+audio mux) for ffmpeg frame extraction.
+ * Heavier than audio-only; use only when key frames are enabled.
+ */
+export async function downloadMergedVideo(
+    url: string,
+    workDir: string,
+    videoId: string
+): Promise<string> {
+    const outTemplate = path.join(workDir, `${videoId}.%(ext)s`);
+    await runCmd(
+        YT_DLP,
+        [
+            '--no-warnings',
+            '-f',
+            'bv*+ba/bestvideo+bestaudio/best',
+            '--merge-output-format',
+            'mp4',
+            '-o',
+            outTemplate,
+            url
+        ],
+        { cwd: workDir }
+    );
+
+    const names = await readdir(workDir);
+    const merged = names.find(
+        (n) =>
+            n.startsWith(videoId) &&
+            (n.endsWith('.mp4') || n.endsWith('.mkv') || n.endsWith('.webm'))
+    );
+    if (!merged) {
+        throw new Error(
+            `Merged video file not found for video id ${videoId} after yt-dlp download`
+        );
+    }
+    return path.join(workDir, merged);
+}
+
 export async function downloadAudio(
     url: string,
     workDir: string,

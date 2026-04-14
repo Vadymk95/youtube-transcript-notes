@@ -99,6 +99,7 @@ language: en
                     videoId: 'abc123',
                     title: 'Amazing video'
                 },
+                segments: [{ startSec: 0, endSec: 1, text: 'Hello there' }],
                 segmentCount: 1,
                 videoDescriptionAlignment: 'high',
                 videoDescriptionLexicalOverlap: 1,
@@ -108,7 +109,7 @@ language: en
             };
         });
 
-        const result = await prepareAgentWorkflow({ url, artifactsDir });
+        const result = await prepareAgentWorkflow({ url, artifactsDir, verificationHints: false });
 
         expect(result.artifactDir).toBe(path.join(artifactsDir, 'abc123'));
         expect(result.transcriptPath).toBe(path.join(artifactsDir, 'abc123', 'transcript.md'));
@@ -200,6 +201,7 @@ title: "Test"
                     videoId: 'xyz999',
                     title: 'Test'
                 },
+                segments: [{ startSec: 0, endSec: 1, text: 'Hi' }],
                 segmentCount: 1,
                 videoDescriptionAlignment: 'high',
                 videoDescriptionLexicalOverlap: 1,
@@ -209,7 +211,12 @@ title: "Test"
             };
         });
 
-        const result = await prepareAgentWorkflow({ url, artifactsDir, replyLanguage: 'en' });
+        const result = await prepareAgentWorkflow({
+            url,
+            artifactsDir,
+            replyLanguage: 'en',
+            verificationHints: false
+        });
 
         expect(result.replyLanguage).toBe('en');
         expect(result.summaryPath).toBe(
@@ -217,6 +224,57 @@ title: "Test"
         );
         const prompt = await readFile(result.summaryPromptPath, 'utf8');
         expect(prompt).toContain('## What the video is about');
+    });
+
+    it('writes verification-hints.md and supplementary context when hints are enabled', async () => {
+        const url = 'https://www.youtube.com/watch?v=vh1';
+        const transcript = `---
+source: subtitle-auto
+video_id: vh1
+title: "T"
+---
+
+**[00:00]** Hi
+`;
+
+        yt.fetchVideoInfo.mockResolvedValue({
+            id: 'vh1',
+            title: 'T',
+            description: 'Link https://example.com/doc'
+        });
+        pipeline.runPipeline.mockImplementation(async ({ outputPath }: { outputPath: string }) => {
+            await writeFile(outputPath, transcript, 'utf8');
+            return {
+                writtenPath: outputPath,
+                meta: {
+                    source: 'subtitle-auto' as const,
+                    videoId: 'vh1',
+                    title: 'T'
+                },
+                segments: [{ startSec: 0, endSec: 1, text: 'Hi' }],
+                segmentCount: 1,
+                videoDescriptionAlignment: 'high',
+                videoDescriptionLexicalOverlap: 1,
+                videoDescriptionTokenCount: 2,
+                videoDescriptionOmittedFromTranscriptYaml: false,
+                videoDescriptionAlignmentPolicy: 'heuristic'
+            };
+        });
+
+        const result = await prepareAgentWorkflow({ url, artifactsDir });
+
+        const hintsPath = path.join(artifactsDir, 'vh1', 'verification-hints.md');
+        const hints = await readFile(hintsPath, 'utf8');
+        expect(hints).toContain('https://example.com/doc');
+
+        const prompt = await readFile(result.summaryPromptPath, 'utf8');
+        expect(prompt).toContain('Supplementary pipeline context');
+        expect(prompt).toContain('verification-hints.md');
+
+        const manifest = JSON.parse(await readFile(result.manifestPath, 'utf8')) as {
+            verificationHintsPath?: string;
+        };
+        expect(manifest.verificationHintsPath).toBeDefined();
     });
 });
 

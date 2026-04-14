@@ -134,7 +134,7 @@ export function renderPromptRequiredOutputFormat(lang?: SummaryOutputLanguageCon
         '',
         facts,
         '',
-        'List facts, numbers, names, dates, books, authors, and links explicitly mentioned in the transcript. Do not invent.',
+        'List facts, numbers, names, dates, versions, package or product names, books, authors, and links **explicitly spoken or shown as text in the transcript**. Prefer **one fact per line** using: `- **Label**: value — [mm:ss]` when a cue time applies; otherwise a short bullet. Do not invent; use `{{AMBIGUITY_FALLBACK}}` when unsure.',
         '',
         terms,
         '',

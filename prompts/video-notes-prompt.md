@@ -16,6 +16,8 @@ You receive the **full video transcript** (segment timestamps optional; spoken l
 {{TRANSCRIPT}}
 ```
 
+{{SUPPLEMENTARY_CONTEXT}}
+
 **Task:** Produce material for **another model** so it can skip reading dozens of pages and still get the gist and anchor facts. **Human readers** may skim the **bullet takeaways** section first; use the **numbered outline** section when strict chronological order matters.
 
 **Language requirement:** Write your **complete** response in **{{OUTPUT_LANGUAGE_NAME}}** only. Use the **exact headings below** so the result can be validated automatically.

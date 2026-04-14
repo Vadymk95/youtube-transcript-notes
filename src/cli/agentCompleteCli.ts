@@ -63,6 +63,10 @@ async function main(): Promise<void> {
             'summary-cmd': { type: 'string' },
             attempts: { type: 'string', default: '1' },
             'allow-any-url': { type: 'boolean', default: false },
+            'no-verification-hints': { type: 'boolean', default: false },
+            'key-frames': { type: 'boolean', default: false },
+            'key-frame-max': { type: 'string' },
+            'key-frame-min-interval-sec': { type: 'string' },
             help: { type: 'boolean', short: 'h', default: false }
         },
         allowPositionals: true
@@ -101,6 +105,13 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
+    const keyFrameMaxRaw = values['key-frame-max']
+        ? Number.parseInt(values['key-frame-max'], 10)
+        : NaN;
+    const keyFrameMinRaw = values['key-frame-min-interval-sec']
+        ? Number.parseInt(values['key-frame-min-interval-sec'], 10)
+        : NaN;
+
     try {
         const result = await runAgentComplete({
             workflow: {
@@ -111,7 +122,17 @@ async function main(): Promise<void> {
                 minSubtitleChars: minChars,
                 audioFormat: values['audio-format'],
                 whisperCommand: values['whisper-cmd'],
-                keepWorkDir: values['keep-tmp']
+                keepWorkDir: values['keep-tmp'],
+                verificationHints: values['no-verification-hints'] ? false : undefined,
+                keyFrames: values['key-frames'] ? true : undefined,
+                keyFrameMax:
+                    Number.isFinite(keyFrameMaxRaw) && keyFrameMaxRaw > 0
+                        ? keyFrameMaxRaw
+                        : undefined,
+                keyFrameMinIntervalSec:
+                    Number.isFinite(keyFrameMinRaw) && keyFrameMinRaw > 0
+                        ? keyFrameMinRaw
+                        : undefined
             },
             prepareOnly: values['prepare-only'],
             summaryCommandTemplate: values['summary-cmd'],

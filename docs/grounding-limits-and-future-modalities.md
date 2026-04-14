@@ -37,21 +37,27 @@ Structure is **encoded**, not implied:
 - **YouTube description** in `manifest.json` (and sometimes YAML in `transcript.md` when alignment is not `low`) — links and pasted text, **not** a substitute for unspoken on-screen pixels
 - **Gaps / ambiguity** sections in the summary contract (language presets) — use them when the transcript does not contain the fact
 
-**What it does not provide today**
+**What the pipeline can add (optional)**
 
-- Frame-level or OCR capture from the video
-- A browser extension or in-app screenshot pipeline
+- **`verification-hints.md`** — URLs from the page description + sample transcript timestamps for manual or downstream checks (**no network** in this step).
+- **`keyframes/*.jpg`** — still images at sampled cue times via **yt-dlp** (merged video) + **ffmpeg** when **`--key-frames`** or **`YT_TRANSCRIPT_KEY_FRAMES=1`** (heavy download).
 
-Those are **future** tracks (see roadmap items **4 — Multimodal / key-frame context** and **6 — UI or browser extension**). Any implementation needs a **written spec** first; the canonical path remains URL → transcript → summary → `agent:check-summary`.
+**Still not in core**
+
+- Automatic OCR or a bundled **vision** model to read slides (you can attach images to chat manually or wire an external vision step).
+- A browser extension or full UI (roadmap item **6**).
+
+The canonical path remains URL → transcript → summary → `agent:check-summary`; key frames and hints are **optional context**, not a substitute for transcript grounding.
 
 ## 4. Audit checklist: “screens / UI” in a text-only workflow
 
-Use this when reviewing a summary **without** multimodal tooling:
+Use this when reviewing a summary (with or without optional **`keyframes/`** stills):
 
 1. **Flag claims** that look like exact version numbers, file paths, or UI labels — **verify** against `transcript.md` (spoken) or quoted text in description, not memory.
 2. If **`videoDescriptionAlignment`** is **`low`** and policy is heuristic, treat embedded YAML description as **unreliable** for speech content (see `DECISIONS.md`).
 3. If the video is **demo-heavy**, state in the summary **gaps** that on-screen detail was not transcribed unless explicitly read aloud.
-4. For **highest precision**, manually attach a screenshot or chapter list in the **chat** step (outside this repo’s default artifacts) — the pipeline does not yet persist images.
+4. With **`--key-frames`**, review **`keyframes/`** for on-screen text; the model still must not invent unreadable pixels.
+5. For **highest precision** beyond stills, manually attach extra screenshots in **chat** if needed.
 
 ## 5. Related commands
 

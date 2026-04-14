@@ -1,7 +1,8 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { downloadVideoAndExtractKeyFrames } from '@/pipeline/keyFramePipeline';
 import { runPipeline } from '@/pipeline/pipeline';
 import { DEFAULT_WHISPER_CMD } from '@/pipeline/whisperFallback';
 import { fetchVideoInfo } from '@/pipeline/ytDlp';
@@ -12,6 +13,7 @@ import {
     summaryFileName
 } from '@/summary/outputLanguage';
 import { computeTranscriptCharMetrics } from '@/summary/transcriptMetrics';
+import { buildVerificationHintsMarkdown } from '@/summary/verificationHints';
 import type {
     DescriptionAlignmentPatch,
     DescriptionAlignmentPolicy
@@ -23,6 +25,9 @@ export const DEFAULT_ARTIFACTS_DIR = path.join('artifacts', 'videos');
 
 /** Editor-oriented next steps; written beside the canonical artifact bundle. */
 export const CURSOR_HANDOFF_BASENAME = 'cursor-handoff.md';
+
+/** URLs + transcript anchors for manual fact-checking (no network I/O). */
+export const VERIFICATION_HINTS_BASENAME = 'verification-hints.md';
 
 const PROMPT_TEMPLATE_PATH = fileURLToPath(
     new URL('../../prompts/video-notes-prompt.md', import.meta.url)
@@ -40,6 +45,18 @@ export type AgentWorkflowOptions = {
     keepWorkDir?: boolean;
     /** Overrides `YT_TRANSCRIPT_DESC_ALIGN_*` for this prepare run. */
     descriptionAlignment?: DescriptionAlignmentPatch;
+    /**
+     * Write `verification-hints.md` (default true). Disable with `false` or `YT_TRANSCRIPT_VERIFICATION_HINTS=0`.
+     */
+    verificationHints?: boolean;
+    /**
+     * Download merged video and extract JPEG stills under `keyframes/` (heavy). Enable with `true` or `YT_TRANSCRIPT_KEY_FRAMES=1`.
+     */
+    keyFrames?: boolean;
+    /** Max stills when key frames enabled (default 24; env `YT_TRANSCRIPT_KEY_FRAME_MAX`). */
+    keyFrameMax?: number;
+    /** Minimum spacing between stills in seconds (default 45; env `YT_TRANSCRIPT_KEY_FRAME_MIN_INTERVAL_SEC`). */
+    keyFrameMinIntervalSec?: number;
 };
 
 export type AgentArtifactPaths = {
@@ -79,6 +96,15 @@ export type AgentWorkflowManifest = {
     /** Optional UX file with copy-paste steps for Cursor chat (same folder as other artifacts). */
     cursorHandoffPath: string;
     replyLanguage: string;
+    /** Present when verification hints file was written. */
+    verificationHintsPath?: string;
+    /** Present when key frames were requested; `files` may be empty if sampling yielded no times. */
+    keyFrames?: {
+        enabled: true;
+        directory: string;
+        files: string[];
+        timesSec: number[];
+    };
 };
 
 export type AgentWorkflowResult = AgentWorkflowManifest &
@@ -89,7 +115,8 @@ export type AgentWorkflowResult = AgentWorkflowManifest &
 export function assembleSummaryPrompt(
     template: string,
     transcript: string,
-    lang?: SummaryOutputLanguageConfig
+    lang?: SummaryOutputLanguageConfig,
+    supplementaryContext?: string
 ): string {
     const promptBlock = template.includes('\n---\n')
         ? template.split('\n---\n').slice(1).join('\n---\n').trimStart()
@@ -97,7 +124,10 @@ export function assembleSummaryPrompt(
     if (!promptBlock.includes('{{TRANSCRIPT}}')) {
         throw new Error('Prompt template must contain {{TRANSCRIPT}} placeholder');
     }
-    const variables = promptTemplateVariables(transcript, lang);
+    const variables = {
+        ...promptTemplateVariables(transcript, lang),
+        SUPPLEMENTARY_CONTEXT: (supplementaryContext ?? '').trim()
+    };
     let rendered = promptBlock;
     for (const [key, value] of Object.entries(variables)) {
         rendered = rendered.replaceAll(`{{${key}}}`, value);
@@ -158,6 +188,8 @@ export type CursorHandoffInput = {
         transcriptPath: string;
         cursorHandoffPath: string;
     };
+    /** Extra `- ...` lines under **Paths (absolute)** (optional artifacts). */
+    optionalPathBullets?: string[];
 };
 
 /** Markdown copy-paste instructions for Cursor chat (no `YT_SUMMARY_CMD`). */
@@ -187,6 +219,9 @@ export function buildCursorHandoffMarkdown(input: CursorHandoffInput): string {
         `- \`summary-prompt.md\`: \`${abs(p.summaryPromptPath)}\``,
         `- Target summary file: \`${abs(p.summaryPath)}\` (preset: **${input.replyLanguage}** / \`${input.summaryBasename}\`)`,
         `- \`transcript.md\` (fallback): \`${abs(p.transcriptPath)}\``,
+        ...(input.optionalPathBullets?.length
+            ? ['', ...input.optionalPathBullets.map((line) => `- ${line}`)]
+            : []),
         '',
         `## Steps for the chat agent`,
         '',
@@ -199,6 +234,79 @@ export function buildCursorHandoffMarkdown(input: CursorHandoffInput): string {
         `Commands assume the repo root is \`${input.repoRootAssumed}\` (where \`package.json\` lives).`,
         ''
     ].join('\n');
+}
+
+function parsePositiveIntEnv(value: string | undefined, fallback: number): number {
+    const n = Number.parseInt(value ?? '', 10);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function wantVerificationHints(options: AgentWorkflowOptions): boolean {
+    if (options.verificationHints === false) {
+        return false;
+    }
+    const v = process.env.YT_TRANSCRIPT_VERIFICATION_HINTS?.trim().toLowerCase();
+    if (v === '0' || v === 'false' || v === 'no') {
+        return false;
+    }
+    return true;
+}
+
+function wantKeyFrames(options: AgentWorkflowOptions): boolean {
+    if (options.keyFrames === true) {
+        return true;
+    }
+    const v = process.env.YT_TRANSCRIPT_KEY_FRAMES?.trim().toLowerCase();
+    return v === '1' || v === 'true' || v === 'yes';
+}
+
+function keyFrameLimits(options: AgentWorkflowOptions): {
+    maxFrames: number;
+    minIntervalSec: number;
+} {
+    return {
+        maxFrames:
+            options.keyFrameMax ?? parsePositiveIntEnv(process.env.YT_TRANSCRIPT_KEY_FRAME_MAX, 24),
+        minIntervalSec:
+            options.keyFrameMinIntervalSec ??
+            parsePositiveIntEnv(process.env.YT_TRANSCRIPT_KEY_FRAME_MIN_INTERVAL_SEC, 45)
+    };
+}
+
+function formatApproxTimestamp(sec: number): string {
+    const s = Math.floor(sec % 60);
+    const m = Math.floor((sec / 60) % 60);
+    const h = Math.floor(sec / 3600);
+    if (h > 0) {
+        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function buildSupplementaryContextMarkdown(parts: {
+    verificationHintsRelative?: string;
+    keyFrames?: { directory: string; files: string[]; timesSec: number[] };
+}): string {
+    const blocks: string[] = [];
+    if (parts.verificationHintsRelative) {
+        blocks.push(
+            `### Verification and link hints\n\nRead \`${parts.verificationHintsRelative}\` in this artifact folder. It lists http(s) URLs from the page description and sample transcript timestamps for fact-checking (no network I/O in this repo).`
+        );
+    }
+    if (parts.keyFrames?.files.length) {
+        const rel = parts.keyFrames.directory;
+        const lines = parts.keyFrames.files.map((f, i) => {
+            const t = parts.keyFrames!.timesSec[i] ?? 0;
+            return `- \`${rel}/${f}\` (~${formatApproxTimestamp(t)})`;
+        });
+        blocks.push(
+            `### Key frame stills (ffmpeg)\n\nOptional JPEGs captured near cue times. Use them to notice **on-screen** text or UI the transcript may omit; do not invent unreadable detail.\n\n${lines.join('\n')}`
+        );
+    }
+    if (blocks.length === 0) {
+        return '';
+    }
+    return ['## Supplementary pipeline context', '', ...blocks].join('\n\n');
 }
 
 export async function prepareAgentWorkflow(
@@ -229,12 +337,56 @@ export async function prepareAgentWorkflow(
         });
         writtenArtifactPaths.push(artifactPaths.transcriptPath);
 
+        let verificationHintsRelative: string | undefined;
+        const verificationPath = path.join(artifactPaths.artifactDir, VERIFICATION_HINTS_BASENAME);
+        if (wantVerificationHints(options)) {
+            const hintsMd = buildVerificationHintsMarkdown({
+                videoUrl: options.url,
+                pageDescription: videoInfo.description,
+                segments: pipelineResult.segments,
+                maxAnchors: 24
+            });
+            await writeFile(verificationPath, hintsMd, 'utf8');
+            writtenArtifactPaths.push(verificationPath);
+            verificationHintsRelative = VERIFICATION_HINTS_BASENAME;
+        }
+
+        let keyFrameBundle:
+            | { enabled: true; directory: string; files: string[]; timesSec: number[] }
+            | undefined;
+        if (wantKeyFrames(options) && pipelineResult.segments.length > 0) {
+            const { maxFrames, minIntervalSec } = keyFrameLimits(options);
+            const kf = await downloadVideoAndExtractKeyFrames({
+                url: options.url,
+                videoId: videoInfo.id,
+                segments: pipelineResult.segments,
+                artifactDir: artifactPaths.artifactDir,
+                maxFrames,
+                minIntervalSec
+            });
+            for (const f of kf.files) {
+                writtenArtifactPaths.push(path.join(artifactPaths.artifactDir, kf.relativeDir, f));
+            }
+            if (kf.files.length > 0) {
+                keyFrameBundle = {
+                    enabled: true,
+                    directory: kf.relativeDir,
+                    files: kf.files,
+                    timesSec: kf.timesSec
+                };
+            }
+        }
+
         const [template, transcript] = await Promise.all([
             loadPromptTemplate(),
             readFile(artifactPaths.transcriptPath, 'utf8')
         ]);
         const charMetrics = computeTranscriptCharMetrics(transcript);
-        const prompt = assembleSummaryPrompt(template, transcript, lang);
+        const supplementary = buildSupplementaryContextMarkdown({
+            verificationHintsRelative,
+            keyFrames: keyFrameBundle?.files.length ? keyFrameBundle : undefined
+        });
+        const prompt = assembleSummaryPrompt(template, transcript, lang, supplementary);
         await writeFile(artifactPaths.summaryPromptPath, prompt, 'utf8');
         writtenArtifactPaths.push(artifactPaths.summaryPromptPath);
 
@@ -259,7 +411,9 @@ export async function prepareAgentWorkflow(
             summaryPromptPath: artifactPaths.summaryPromptPath,
             summaryPath: artifactPaths.summaryPath,
             cursorHandoffPath: artifactPaths.cursorHandoffPath,
-            replyLanguage: lang.code
+            replyLanguage: lang.code,
+            ...(verificationHintsRelative ? { verificationHintsPath: verificationPath } : {}),
+            ...(keyFrameBundle ? { keyFrames: keyFrameBundle } : {})
         };
         await writeFile(
             artifactPaths.manifestPath,
@@ -267,6 +421,19 @@ export async function prepareAgentWorkflow(
             'utf8'
         );
         writtenArtifactPaths.push(artifactPaths.manifestPath);
+
+        const abs = (x: string) => path.resolve(x);
+        const optionalPathBullets: string[] = [];
+        if (verificationHintsRelative) {
+            optionalPathBullets.push(
+                `Optional verification hints: \`${abs(verificationPath)}\` (URLs + time anchors; no network)`
+            );
+        }
+        if (keyFrameBundle?.files.length) {
+            optionalPathBullets.push(
+                `Optional key frame stills: \`${abs(path.join(artifactPaths.artifactDir, keyFrameBundle.directory))}/\``
+            );
+        }
 
         const handoffMd = buildCursorHandoffMarkdown({
             videoTitle: videoInfo.title,
@@ -282,7 +449,8 @@ export async function prepareAgentWorkflow(
                 summaryPath: artifactPaths.summaryPath,
                 transcriptPath: artifactPaths.transcriptPath,
                 cursorHandoffPath: artifactPaths.cursorHandoffPath
-            }
+            },
+            optionalPathBullets: optionalPathBullets.length > 0 ? optionalPathBullets : undefined
         });
         await writeFile(artifactPaths.cursorHandoffPath, handoffMd, 'utf8');
         writtenArtifactPaths.push(artifactPaths.cursorHandoffPath);
@@ -294,6 +462,10 @@ export async function prepareAgentWorkflow(
         };
     } catch (err) {
         await rollbackAgentArtifactFiles(writtenArtifactPaths);
+        await rm(path.join(artifactPaths.artifactDir, 'keyframes'), {
+            recursive: true,
+            force: true
+        }).catch(() => undefined);
         throw err;
     }
 }

@@ -1,5 +1,15 @@
 # Architectural Decisions
 
+## [2026-04] Verification hints file + optional ffmpeg key frames in `agent:prepare`
+
+**Decision**: After `runPipeline`, **`prepareAgentWorkflow`** may write **`verification-hints.md`** (http(s) URLs from page description + spaced transcript anchors; **no network I/O**) unless disabled via **`verificationHints: false`** or **`YT_TRANSCRIPT_VERIFICATION_HINTS=0`**. When **`keyFrames: true`** or **`YT_TRANSCRIPT_KEY_FRAMES=1`**, download merged video with **`downloadMergedVideo`**, extract JPEGs under **`keyframes/`** via **`extractKeyFrameStills`** (`ffmpeg`), delete temp video. **`summary-prompt.md`** gains **`{{SUPPLEMENTARY_CONTEXT}}`** pointing at those artifacts. **`manifest.json`** may include **`verificationHintsPath`** and **`keyFrames`** `{ enabled, directory, files, timesSec }`.
+
+**Why**: Implements roadmap focus on denser second-hop context, lightweight “fact anchors,” and on-screen signal without requiring a vision model in-repo.
+
+**Trade-off**: Key frames duplicate yt-dlp load and depend on disk; verification hints use naive URL regex (not full RFC 3986).
+
+---
+
 ## [2026-04] Roadmap maintainer priorities (denser handoff, fact-fetch, frames)
 
 **Decision**: Treat **`docs/technical-debt-roadmap.md`** **Current focus** as the live priority: implement **denser second-hop handoff** (prompt + `outputLanguage` + `summaryContract`) and **claim verification / fact-fetch** only with a written spec and without replacing the canonical prepare → summary → validate path. **Batch URL orchestration** stays **deferred**. **ffmpeg**-based **timecoded stills** (from transcript cue times or sparse sampling) plus optional vision/multimodal **review hints** are the intended shape of multimodal work; they remain **optional** and **off** by default so the core pipeline works without downloaded video.
