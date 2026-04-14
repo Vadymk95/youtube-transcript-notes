@@ -56,6 +56,30 @@ describe('assembleSummaryPrompt', () => {
         expect(prompt).toContain('line');
         expect(prompt).not.toContain('{{TRANSCRIPT}}');
     });
+
+    it('places supplementary context after Task and Constraints, not immediately after transcript', () => {
+        const stub = `Doc
+---
+{{TRANSCRIPT}}
+**Task:** do the summary
+**Constraints:**
+- do not invent
+{{SUPPLEMENTARY_CONTEXT}}
+`;
+        const out = assembleSummaryPrompt(
+            stub,
+            'spoken text\n',
+            SUMMARY_LANGUAGE_PRESETS.ru,
+            '## Supplementary pipeline context\n\nextra'
+        );
+        const transcriptEnd = out.indexOf('spoken text');
+        const taskPos = out.indexOf('**Task:**');
+        const supPos = out.indexOf('## Supplementary pipeline context');
+        expect(transcriptEnd).toBeGreaterThan(-1);
+        expect(taskPos).toBeGreaterThan(transcriptEnd);
+        expect(supPos).toBeGreaterThan(taskPos);
+        expect(out).not.toContain('{{SUPPLEMENTARY_CONTEXT}}');
+    });
 });
 
 describe('prepareAgentWorkflow', () => {

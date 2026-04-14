@@ -8,6 +8,8 @@
 
 **Trade-off**: Key frames duplicate yt-dlp load and depend on disk; verification hints use naive URL regex (not full RFC 3986).
 
+**Prompt order (follow-up):** **`{{SUPPLEMENTARY_CONTEXT}}`** in **`prompts/video-notes-prompt.md`** is emitted **after** **Task**, required format, and **Constraints** (before the trailing `---`), not directly under the transcript — so instruction-following precedes optional hints and keyframe paths.
+
 ---
 
 ## [2026-04] Roadmap maintainer priorities (denser handoff, fact-fetch, frames)
