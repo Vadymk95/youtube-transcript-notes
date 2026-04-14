@@ -34,7 +34,7 @@ Open **`docs/technical-debt-roadmap.md`** (condensed **open backlog only**), **`
 
 - **Prepare path:** Sequential `--sub-langs`, 429 retry, Whisper preflight before audio, and description in manifest are **implemented** — see DECISIONS and pipeline source.
 - **Troubleshooting** remains the user-facing mitigation guide (429, env vars, binaries).
-- **Remaining backlog** in the roadmap file lists mostly productization (optional summarizer, output modes, fixtures/benchmark) — not the incident above unless regressions appear.
+- **Remaining backlog** in the roadmap file is **product evolution** (batch URLs, denser second-hop summaries, exploratory multimodal/UI, archive) — see [technical-debt-roadmap.md](./technical-debt-roadmap.md). It does not re-open the fixed incidents above unless regressions appear.
 
 ## Constraints
 

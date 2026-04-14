@@ -53,7 +53,9 @@ Headings, validator rules, and `prompts/video-notes-prompt.md` must stay aligned
 
 ## Where to get help
 
+- [Documentation index](docs/README.md) — all docs by role
 - [Troubleshooting](docs/troubleshooting.md) — yt-dlp, ffmpeg, Whisper, HTTP 429
+- [Grounding, structure, and UI limits](docs/grounding-limits-and-future-modalities.md) — accurate summaries, contract shape, on-screen gaps
 - [Reliability handoff (for agents)](docs/reliability-handoff-prompt.md) — incident context and roadmap alignment
 - [Technical debt / roadmap](docs/technical-debt-roadmap.md)
 

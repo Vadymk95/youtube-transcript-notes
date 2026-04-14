@@ -18,6 +18,8 @@
 
 ## Optional process docs (cross-repo and in-repo rhythm)
 
+- **Docs index (start here):** `docs/README.md`
+- **Grounding, summary structure, transcript vs on-screen UI limits:** `docs/grounding-limits-and-future-modalities.md`
 - Sibling **agent-autoresearch** harness for bounded tasks: `docs/autoresearch-cross-repo-workflow.md` (contract and ledger; no auto-generated patches).
 - In-repo framing of bounded verify/keep loops aligned with that style: `docs/bounded-improvement.md`.
 - Condensed **open backlog** (goal: shrink to zero and delete): `docs/technical-debt-roadmap.md`.

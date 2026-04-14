@@ -4,6 +4,8 @@
 
 **Process:** Work **top-down** (easiest → hardest). Small slice → `npm run ci` → sync `.cursor/brain/` if trust model changes. Exploratory bullets need a **spec** before core code. When something ships, **remove** it from the backlog and add **one line** under Recently shipped.
 
+**Context:** accuracy vs hallucination, **structured** handoff contract, and **transcript-only vs on-screen** limits — [grounding-limits-and-future-modalities.md](./grounding-limits-and-future-modalities.md).
+
 ## Backlog (real difficulty: easiest → hardest)
 
 1. **Batch URLs** — orchestrate multiple **watch URLs** in **one CLI run** (read list from file or stdin), call **`prepare` sequentially** (same pattern as **sequential `--sub-langs`**: avoid parallel hammering, optional **delay ms** / **max count**). Playlists as a **later** slice (yt-dlp surface, higher scraping/ToS risk).

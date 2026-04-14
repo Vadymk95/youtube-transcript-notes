@@ -86,7 +86,9 @@ Output:
 
 - [LICENSE](LICENSE) — MIT
 - [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup and PR checklist
+- [docs/README.md](docs/README.md) — documentation index (by role)
 - [docs/troubleshooting.md](docs/troubleshooting.md) — yt-dlp, ffmpeg, Whisper, HTTP 429, env flags
+- [docs/grounding-limits-and-future-modalities.md](docs/grounding-limits-and-future-modalities.md) — accurate summaries, contract shape, on-screen vs transcript limits
 
 ## Requirements
 

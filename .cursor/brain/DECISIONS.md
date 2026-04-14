@@ -1,5 +1,15 @@
 # Architectural Decisions
 
+## [2026-04] Documentation index and grounding vs modalities narrative
+
+**Decision**: Maintain **`docs/README.md`** as the canonical **index** of all files under `docs/` (grouped by audience). Add **`docs/grounding-limits-and-future-modalities.md`** to explain (1) layers that improve **accuracy** vs **shape**, (2) that **`agent:check-summary`** validates structure, not factual truth, (3) **transcript-only** limits for on-screen detail and how that ties to roadmap items **2** (denser handoff), **4** (multimodal), and **6** (UI/extension). Cross-link from **`docs/technical-debt-roadmap.md`**, **`CONTRIBUTING.md`**, root **`README.md`**, and **`MAP.md`**.
+
+**Why**: Reduces “docs feel messy” without deleting cross-repo process files; makes the **UI/screenshot gap** explicit next to the product contract.
+
+**Trade-off**: When the summary contract or backlog changes, update the grounding doc or index in the same PR when behavior or priorities shift.
+
+---
+
 ## [2026-04] Page description vs transcript (YAML omission heuristic)
 
 **Decision**: After subtitle/Whisper segments are built, **`assessVideoDescriptionAlignment(pageDescription, plainTranscript, thresholds)`** scores token overlap (URLs stripped, English stop words dropped). When **`descriptionAlignment.policy`** is **`heuristic`**, the page description is long enough, and overlap is below the configured minimum, **`runPipeline`** omits **`description`** from **`transcript.md`** front matter only. **`policy: always_include`** keeps YAML description regardless of overlap (lexical metrics stay honest). Thresholds and policy resolve from **`YT_TRANSCRIPT_DESC_ALIGN_*`** and optional **`--desc-align-*`** flags (CLI patch merges over env). **`PipelineResult.meta.description`** and **`manifest.json` `videoDescription`** still hold the full yt-dlp text. The manifest stores **`videoDescriptionAlignment`**, **`videoDescriptionAlignmentPolicy`**, **`videoDescriptionLexicalOverlap`**, **`videoDescriptionTokenCount`**, **`videoDescriptionOmittedFromTranscriptYaml`**.
