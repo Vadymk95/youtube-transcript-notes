@@ -8,6 +8,11 @@ Quick reference for the most common **local-first** pipeline failures. For incid
 - **Not found**: install [yt-dlp](https://github.com/yt-dlp/yt-dlp) and ensure it is on `PATH`, or set `YT_DLP_BIN` to the binary path.
 - **Subtitles missing**: try `YT_TRANSCRIPT_DEBUG=1` or `NODE_DEBUG=yt-transcript:ytdlp` to print subtitle attempt failures on stderr.
 - **HTTP 429 (Too Many Requests)**: YouTube may rate-limit when many caption languages are requested. The pipeline tries **one positive language at a time** (with shared exclusions like `-live_chat`) and can **retry once** per language after a short wait (`YT_TRANSCRIPT_SUB_429_RETRY_MS`, default `3500` ms; invalid values use that default). Narrow `YT_TRANSCRIPT_SUB_LANGS` further (e.g. `ru`) if you still hit 429. Avoid `all` unless you accept many requests and higher risk.
+- **HTTP 403 / SABR / PO Token / signature failures**: YouTube progressively enforces SABR (Server-Adaptive Bitrate) streaming and **PO Tokens** for some clients; outdated yt-dlp builds can fall back to a 403 or to a missing-format error. First step: **upgrade yt-dlp** to the latest release (`pip install -U yt-dlp` or `brew upgrade yt-dlp`). If failures continue:
+    - try a different player client via yt-dlp `--extractor-args "youtube:player_client=tv,web_safari"` (or another supported client list — see the official [PO Token Guide](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide));
+    - for stubborn videos, supply a fresh PO Token / cookies per the same guide;
+    - reference issues for context: [yt-dlp #15789](https://github.com/yt-dlp/yt-dlp/issues/15789) (PO Token configuration), [#16082](https://github.com/yt-dlp/yt-dlp/issues/16082) (SABR + n-challenge), [#16256](https://github.com/yt-dlp/yt-dlp/issues/16256) (provider error 2026-03), [#15751](https://github.com/yt-dlp/yt-dlp/issues/15751) (2026-01-29 release breakage).
+      Set `YT_TRANSCRIPT_DEBUG=1` to print the actual yt-dlp stderr from each subtitle attempt before guessing.
 
 ## ffmpeg
 

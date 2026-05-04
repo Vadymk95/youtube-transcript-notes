@@ -8,7 +8,11 @@
 
 ## Current focus (maintainer priority — not the same as difficulty order)
 
-- **Now:** (1) **denser handoff** (backlog item 1), (2) **fact-fetch / claim verification** (item 2, spec before code), (3) **timecoded frames** — extract stills with **ffmpeg** at transcript cue times (or a sparse grid), write paths under the video artifact bundle, optional **vision or multimodal** pass to label “worth human/model review” — extends item 3; keep the step **optional** and **local-first** by default (no cloud as required path).
+- **Now (active):** **denser handoff** (backlog item 1) — single roadmap item with observed pain.
+- **Deferred per `.cursor/brain/DECISIONS.md` [2026-05] velosipied review** until a specific trigger event:
+    - **fact-fetch / claim verification** (item 2) — requires allowlist + size cap + scanner discipline before any implementation; spec first.
+    - **timecoded frames + optional vision pass** (item 3) — heavy disk + extra video download; spec before implementation; core path must run without it.
+- The deferred items stay in backlog (below) so the spec work is captured when triggered, not lost.
 
 ## Backlog (real difficulty: easiest → hardest)
 

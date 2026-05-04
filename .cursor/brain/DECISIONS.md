@@ -1,5 +1,24 @@
 # Architectural Decisions
 
+## [2026-05] Velosipied review — keep on trajectory, reject pluggable backend slot
+
+**Decision**: After /deepsearch (5 source-orthogonal angles + adversarial critic + 2 refinements + URL-liveness sweep) and /consilium (7-persona vote on 7 numbered items), keep `youtube-transcript-notes` on its current trajectory with refinements:
+
+- **APPLY** items 1, 2, 4, 6 — local pipeline (yt-dlp + Whisper + caption-cleanup harness + description-alignment), Ralph structural validator (`agent:check-summary`), multi-language `ru` / `en` presets with script check, local-first stance.
+- **APPLY SUBSET** item 3 — keep `manifest.json` + `summary-prompt.md` + `summary.<lang>.md`; put **`cursor-handoff.md` on probation** (audit usage in 30–60 days; drop if agents do not open it).
+- **APPLY SUBSET** item 5 — keep "denser handoff" as the only roadmap item with observed pain. **Defer** fact-fetch / verification-hints and ffmpeg key-frames until a specific trigger event; fact-fetch must add an allowlist + size cap + scanner discipline before implementation.
+- **REJECT** item 7 — no optional pluggable backend slot. Premature abstraction with no observed pain; red-team killer Q ("name one trigger event in the next 90 days that flips this from aspiration to use") is unanswerable today. Add only if ≥2 dated substrate failures (yt-dlp / Whisper) within a 90-day window.
+
+**Why**: /deepsearch verified that 0 of 9 OSS competitors cover the 7-feature combo (Ralph rewrite-until-passes validator + multi-file artifact bundle + description-alignment + Russian first-class + sequential batch + caption-cleanup harness + editor-agent primary UX); closest competitors (`steipete/summarize` 5808⭐, `lifesized/youtube-transcriber`, `jftuga/transcript-critic`) cover 0–2 of 7. Ralph anti-pattern critique (Cripe / Codacy) does not apply — the validator is a bounded structural-shape contract, not unbounded code-gen with weak functional-only exit criteria. Substrate (yt-dlp + Whisper + LLM call) is commoditized; the repo correctly leans on yt-dlp instead of duplicating that layer.
+
+**Trade-off**: Ongoing maintenance cost of the substrate (yt-dlp churn — see new SABR / PO-token runbook in `docs/troubleshooting.md`) and validator-prompt-preset triple-sync. Roadmap items 2 (fact-fetch) and 4 (key-frames) require explicit trigger pain to land. Future-self risk: editor-agent delta closes by months (`lifesized/youtube-transcriber` already ships SKILL + MCP); revisit when `steipete/summarize` ships a `--schema` flag or any peer pairs Ralph rewrite loop with multi-language summary contract.
+
+**Revisit triggers (falsifiable)**: usage <4 videos / month over a 30-day window → reconsider decommission; ≥2 dated substrate failures in 90 days → wire pluggable backend; `cursor-handoff.md` not opened by agents in 60 days → drop; `eval:transcript-quality` harness catches zero regressions in 90 days → reconsider harness ROI; SABR / PO-token rollout breaks `agent:prepare` end-to-end → add runbook + provider abstraction.
+
+**Source**: full synthesis at `~/Documents/Obsidian/Brain/personal/youtube-transcript-notes-velosipied-2026-05-04-decision.md`; /deepsearch RID `deepsearch-yt-velosipied-20260503T101629Z`.
+
+---
+
 ## [2026-04] Sequential batch URLs in `agent:prepare`
 
 **Decision**: `agentWorkflowCli` supports **`--batch-file <path>`** (`-` reads stdin): one YouTube watch URL per line; empty lines and **`#`** comments skipped. Invokes **`prepareAgentWorkflow` sequentially** (no parallel yt-dlp / page load bursts). Optional **`--batch-delay-ms`** or **`YT_TRANSCRIPT_BATCH_DELAY_MS`**, **`--batch-max`**, **`--batch-continue-on-error`**. Stdout is one JSON object with **`results`** (and optional **`failures`**); process exits **non-zero** if any URL failed.
