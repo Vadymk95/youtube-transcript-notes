@@ -34,7 +34,7 @@ Primary user experience:
 
 ## Canonical Workflow
 
-The repo has one canonical agent flow: `agent:prepare` writes `transcript.md`, `summary-prompt.md`, `manifest.json`, and `cursor-handoff.md` (guided checklist for Cursor chat paths + validator command) under `artifacts/videos/<videoId>/`. The agent (chat step) writes `summary.<replyLanguage>.md`, then runs `agent:check-summary` until it passes, and replies using that summary in the configured output language.
+The repo has one canonical agent flow: `agent:prepare` writes `transcript.md`, `summary-prompt.md`, `manifest.json`, and `cursor-handoff.md` (guided checklist for Cursor chat paths + validator command) under `artifacts/videos/<slug>-<id6>/` (slugified title + 6-char videoId suffix; falls back to raw `videoId` when the title slug is empty). The agent (chat step) writes `summary.<replyLanguage>.md`, then runs `agent:check-summary` until it passes, and replies using that summary in the configured output language.
 
 Do not introduce an alternative default path through an external MCP, remote API, or direct prompt-only summarization unless the user explicitly asks for that architecture.
 

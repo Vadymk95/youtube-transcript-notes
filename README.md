@@ -37,7 +37,7 @@ npm install
 Artifacts are written under:
 
 ```text
-artifacts/videos/<videoId>/
+artifacts/videos/<slug>-<id6>/
   transcript.md
   summary-prompt.md
   summary.<replyLanguage>.md
@@ -45,7 +45,7 @@ artifacts/videos/<videoId>/
   cursor-handoff.md
 ```
 
-Default output language is Russian, so the default summary file is `summary.ru.md`.
+The directory name is a slugified `videoTitle` plus the first 6 chars of `videoId` (e.g. `faster-docker-k8s-and-vms-on-macos-orbstack-aJe7Cv/`). The semantic key is still `manifest.json.videoId` — read it from the manifest, do not parse the directory name. Default output language is Russian, so the default summary file is `summary.ru.md`.
 
 ### Defaults and environment (quick reference)
 
@@ -83,7 +83,7 @@ Output:
 
 - **`md`** — YAML front matter plus segments like `**[MM:SS]** text` (default).
 - **`txt`** — plain text, no timestamps.
-- **Agent workflow artifacts** — transcript, summary prompt, language-specific summary file, and manifest JSON under `./artifacts/videos/<videoId>/`.
+- **Agent workflow artifacts** — transcript, summary prompt, language-specific summary file, and manifest JSON under `./artifacts/videos/<slug>-<id6>/`.
 
 ## License, contributing, troubleshooting
 
@@ -148,17 +148,17 @@ Validation writes machine-readable JSON to **stdout**; human hints go to **stder
 
 This command writes a stable artifact bundle for the agent:
 
-- `artifacts/videos/<videoId>/transcript.md`
-- `artifacts/videos/<videoId>/summary-prompt.md`
-- `artifacts/videos/<videoId>/summary.<replyLanguage>.md`
-- `artifacts/videos/<videoId>/manifest.json`
-- `artifacts/videos/<videoId>/cursor-handoff.md` (guided checklist; optional to open)
+- `artifacts/videos/<slug>-<id6>/transcript.md`
+- `artifacts/videos/<slug>-<id6>/summary-prompt.md`
+- `artifacts/videos/<slug>-<id6>/summary.<replyLanguage>.md`
+- `artifacts/videos/<slug>-<id6>/manifest.json`
+- `artifacts/videos/<slug>-<id6>/cursor-handoff.md` (guided checklist; optional to open)
 
 It also prints the same paths and metadata as JSON to stdout. The intended flow is:
 
 1. Generate transcript and prompt with `agent:prepare`.
 2. Write the final summary to `summary.<replyLanguage>.md` (default: `summary.ru.md`).
-3. Validate it with `npm run agent:check-summary -- "artifacts/videos/<videoId>/summary.<replyLanguage>.md"`.
+3. Validate it with `npm run agent:check-summary -- "artifacts/videos/<slug>-<id6>/summary.<replyLanguage>.md"`.
 4. If validation fails, rewrite the summary and validate again.
 5. Keep the summary strictly grounded in the transcript. If a detail is missing, use the configured ambiguity fallback instead of guessing.
 
@@ -200,7 +200,7 @@ The summary output defaults to **Russian** (`ru`).
 YT_SUMMARY_LANG=en npm run agent:prepare -- "<youtube-url>"
 # or
 npm run agent:prepare -- "<youtube-url>" --reply-lang en
-npm run agent:check-summary -- "artifacts/videos/<videoId>/summary.en.md" --reply-lang en
+npm run agent:check-summary -- "artifacts/videos/<slug>-<id6>/summary.en.md" --reply-lang en
 ```
 
 Built-in presets: **`ru`**, **`en`** (see `SUMMARY_LANGUAGE_PRESETS` in `src/summary/outputLanguage.ts`). Unknown codes fail fast with a clear error.

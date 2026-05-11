@@ -6,6 +6,7 @@ import { downloadVideoAndExtractKeyFrames } from '@/pipeline/keyFramePipeline';
 import { runPipeline } from '@/pipeline/pipeline';
 import { DEFAULT_WHISPER_CMD } from '@/pipeline/whisperFallback';
 import { fetchVideoInfo } from '@/pipeline/ytDlp';
+import { buildArtifactDirName } from '@/shared/safePathSegment';
 import {
     type SummaryOutputLanguageConfig,
     promptTemplateVariables,
@@ -159,10 +160,12 @@ export async function rollbackAgentArtifactFiles(paths: readonly string[]): Prom
 
 function resolveArtifactPaths(
     artifactsDir: string,
+    videoTitle: string,
     videoId: string,
     lang: SummaryOutputLanguageConfig
 ): AgentArtifactPaths {
-    const artifactDir = path.join(artifactsDir, videoId);
+    const dirName = buildArtifactDirName(videoTitle, videoId);
+    const artifactDir = path.join(artifactsDir, dirName);
     return {
         artifactDir,
         transcriptPath: path.join(artifactDir, 'transcript.md'),
@@ -315,7 +318,7 @@ export async function prepareAgentWorkflow(
     const videoInfo = await fetchVideoInfo(options.url);
     const lang = resolveSummaryOutputLanguage(options.replyLanguage);
     const artifactsDir = path.resolve(process.cwd(), options.artifactsDir ?? DEFAULT_ARTIFACTS_DIR);
-    const artifactPaths = resolveArtifactPaths(artifactsDir, videoInfo.id, lang);
+    const artifactPaths = resolveArtifactPaths(artifactsDir, videoInfo.title, videoInfo.id, lang);
 
     await mkdir(artifactPaths.artifactDir, { recursive: true });
 

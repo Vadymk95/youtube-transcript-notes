@@ -1,5 +1,17 @@
 # Architectural Decisions
 
+## [2026-05] Slugified artifact directory names
+
+**Decision**: `artifacts/videos/<videoId>/` becomes **`artifacts/videos/<slug>-<id6>/`**, where `<slug>` is built from `videoTitle` (ASCII lowercase, NFKD-stripped, basic Cyrillic transliteration, non-alnum → `-`, ≤ 50 chars trimmed at word boundary) and `<id6>` is the first 6 chars of `videoId`. Falls back to the raw `videoId` when the slug is empty (emoji-only or fully non-ASCII titles). Implemented in `buildArtifactDirName()` (`src/shared/safePathSegment.ts`); used by `resolveArtifactPaths()` in `agentWorkflow.ts` and the one-shot `scripts/migrate-artifact-dirs.ts` migration.
+
+**Why**: `ls artifacts/videos/` showed only 11-char YouTube ids — operators had to open `manifest.json` to know which folder belonged to which video. Slug-then-id keeps the directory listing scannable while preserving uniqueness against title collisions.
+
+**Trade-off**: Directory name is now derived data (title at prepare time), not the canonical key. Agents and scripts must read `manifest.json.videoId` for the semantic id, not parse the directory name. Renaming a video on YouTube does not affect already-written artifact directories — the slug freezes at prepare time. Changing the slug rules (max length, transliteration table) without re-running the migration script leaves mixed naming across `artifacts/videos/`.
+
+**Migration**: `npx tsx scripts/migrate-artifact-dirs.ts` renames every legacy `<videoId>/` directory in-place and rewrites absolute paths inside `manifest.json` and `cursor-handoff.md`. Idempotent (`--dry-run` for preview).
+
+---
+
 ## [2026-05] Velosipied review — keep on trajectory, reject pluggable backend slot
 
 **Decision**: After /deepsearch (5 source-orthogonal angles + adversarial critic + 2 refinements + URL-liveness sweep) and /consilium (7-persona vote on 7 numbered items), keep `youtube-transcript-notes` on its current trajectory with refinements:

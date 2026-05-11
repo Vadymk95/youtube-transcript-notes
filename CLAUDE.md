@@ -17,7 +17,7 @@ Canonical chat UX:
 
 1. User sends a YouTube URL.
 2. Agent runs `npm run agent:prepare -- "<url>"`.
-3. Agent reads `artifacts/videos/<videoId>/manifest.json`.
+3. Agent reads `artifacts/videos/<slug>-<id6>/manifest.json` (the exact path is printed by `agent:prepare` on stdout).
 4. Agent reads `summary-prompt.md`.
 5. Agent writes `summary.<replyLanguage>.md` (default: `summary.ru.md`).
 6. Agent runs `npm run agent:check-summary -- "<summary-file>"`.
@@ -41,7 +41,7 @@ Runtime dependencies on the machine:
 The only canonical generated bundle is:
 
 ```text
-artifacts/videos/<videoId>/
+artifacts/videos/<slug>-<id6>/
   transcript.md
   summary-prompt.md
   summary.<replyLanguage>.md
@@ -49,7 +49,9 @@ artifacts/videos/<videoId>/
   cursor-handoff.md
 ```
 
-- `manifest.json` is the machine-friendly entrypoint (includes `videoDescription` from YouTube when present, alignment metrics + `videoDescriptionAlignmentPolicy`, and `cursorHandoffPath`). Tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`.
+Directory name = slugified `videoTitle` (≤ 50 chars at word boundary, ASCII via NFKD strip + basic Cyrillic transliteration) joined with the first 6 chars of `videoId`. Falls back to raw `videoId` when the slug is empty (emoji-only or non-ASCII titles). The semantic key is still `manifest.json.videoId` — agents must read it from the manifest, not parse the directory name.
+
+- `manifest.json` is the machine-friendly entrypoint (includes `videoDescription` from YouTube when present, alignment metrics + `videoDescriptionAlignmentPolicy`, and `cursorHandoffPath`). The `videoId` field is the stable semantic key — the directory name is a human-readable derivative. Tunable via `YT_TRANSCRIPT_DESC_ALIGN_*` / `--desc-align-*`.
 - `cursor-handoff.md` is a guided Cursor checklist (paths + `agent:check-summary` hint); not validated as the summary output.
 - `summary-prompt.md` is the primary source for the final answer.
 - `summary.<replyLanguage>.md` is the required persisted handoff output (default: `summary.ru.md`).

@@ -135,15 +135,16 @@ language: en
 
         const result = await prepareAgentWorkflow({ url, artifactsDir, verificationHints: false });
 
-        expect(result.artifactDir).toBe(path.join(artifactsDir, 'abc123'));
-        expect(result.transcriptPath).toBe(path.join(artifactsDir, 'abc123', 'transcript.md'));
+        const expectedDir = 'amazing-video-abc123';
+        expect(result.artifactDir).toBe(path.join(artifactsDir, expectedDir));
+        expect(result.transcriptPath).toBe(path.join(artifactsDir, expectedDir, 'transcript.md'));
         expect(result.summaryPromptPath).toBe(
-            path.join(artifactsDir, 'abc123', 'summary-prompt.md')
+            path.join(artifactsDir, expectedDir, 'summary-prompt.md')
         );
-        expect(result.summaryPath).toBe(path.join(artifactsDir, 'abc123', summaryFileName()));
-        expect(result.manifestPath).toBe(path.join(artifactsDir, 'abc123', 'manifest.json'));
+        expect(result.summaryPath).toBe(path.join(artifactsDir, expectedDir, summaryFileName()));
+        expect(result.manifestPath).toBe(path.join(artifactsDir, expectedDir, 'manifest.json'));
         expect(result.cursorHandoffPath).toBe(
-            path.join(artifactsDir, 'abc123', 'cursor-handoff.md')
+            path.join(artifactsDir, expectedDir, 'cursor-handoff.md')
         );
         expect(result.transcriptSource).toBe('subtitle-auto');
         expect(result.transcriptLanguage).toBe('en');
@@ -152,7 +153,7 @@ language: en
         expect(pipeline.runPipeline).toHaveBeenCalledWith(
             expect.objectContaining({
                 url,
-                outputPath: path.join(artifactsDir, 'abc123', 'transcript.md'),
+                outputPath: path.join(artifactsDir, expectedDir, 'transcript.md'),
                 format: 'md',
                 minSubtitleChars: 80,
                 audioFormat: 'm4a',
@@ -244,7 +245,7 @@ title: "Test"
 
         expect(result.replyLanguage).toBe('en');
         expect(result.summaryPath).toBe(
-            path.join(artifactsDir, 'xyz999', summaryFileName(SUMMARY_LANGUAGE_PRESETS.en))
+            path.join(artifactsDir, 'test-xyz999', summaryFileName(SUMMARY_LANGUAGE_PRESETS.en))
         );
         const prompt = await readFile(result.summaryPromptPath, 'utf8');
         expect(prompt).toContain('## What the video is about');
@@ -287,7 +288,7 @@ title: "T"
 
         const result = await prepareAgentWorkflow({ url, artifactsDir });
 
-        const hintsPath = path.join(artifactsDir, 'vh1', 'verification-hints.md');
+        const hintsPath = path.join(artifactsDir, 't-vh1', 'verification-hints.md');
         const hints = await readFile(hintsPath, 'utf8');
         expect(hints).toContain('https://example.com/doc');
 
